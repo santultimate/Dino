@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // Import pour jsonDecode/jsonEncode
+import 'dart:convert';
 import '../models/game_mode.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // 🔥 Firestore
 
 class ScoreService {
   static const String _topScoresKey = 'top_scores';
   static const String _selectedSkinKey = 'selected_skin';
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // ✅ Ajout Firestore
 
   Future<void> saveScore({
     required GameMode mode,
@@ -22,11 +25,8 @@ class ScoreService {
         'mode': mode.toString(),
         'date': DateTime.now().toIso8601String(),
       });
-      
-      // Trie par score décroissant
+
       scores.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
-      
-      // Garde seulement les 5 meilleurs scores
       final topScores = scores.length > 5 ? scores.sublist(0, 5) : scores;
       
       await prefs.setStringList(
@@ -69,7 +69,6 @@ class ScoreService {
       final scores = await getTopScores(mode);
       if (scores.isEmpty) return 0;
       
-      // Trouve le score maximum
       int maxScore = 0;
       for (final score in scores) {
         final currentScore = score['score'] as int? ?? 0;
@@ -101,6 +100,16 @@ class ScoreService {
     } catch (e) {
       debugPrint('Error getting skin: $e');
       return 'default';
+    }
+  }
+
+  // ✅ Méthode Firestore
+  Future<int> getPlayerHighScore(String uid) async {
+    final doc = await _firestore.collection('scores').doc(uid).get();
+    if (doc.exists && doc.data()!.containsKey('highScore')) {
+      return doc['highScore'] ?? 0;
+    } else {
+      return 0;
     }
   }
 }

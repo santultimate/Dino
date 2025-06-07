@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:dino_game_v2/screens/game_screen.dart';
-import 'package:dino_game_v2/screens/leaderboard_screen.dart';
-import 'package:dino_game_v2/screens/shop_screen.dart';
-import 'package:dino_game_v2/models/game_mode.dart';
-import 'package:dino_game_v2/services/game_service.dart';
-import 'package:dino_game_v2/services/sound_service.dart';
-import 'package:dino_game_v2/services/score_service.dart';
-import 'package:dino_game_v2/services/settings_service.dart';
-import 'package:dino_game_v2/services/shop_service.dart';
-import 'package:dino_game_v2/widgets/mode_button.dart';
+
+import 'screens/game_screen.dart';
+import 'screens/leaderboard_screen.dart';
+import 'screens/shop_screen.dart';
+import 'models/game_mode.dart';
+import 'services/game_service.dart';
+import 'services/sound_service.dart';
+import 'services/score_service.dart';
+import 'services/settings_service.dart';
+import 'widgets/mode_button.dart';
+import 'package:dino_game_v2/services/shop_service.dart' as shop_service;
+
+
+
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => GameService()),
-        ChangeNotifierProvider(create: (_) => SettingsService()), // Ajouté
-        ChangeNotifierProvider(create: (_) => ShopService()), // Ajouté
-        Provider(create: (_) => SoundService()),
-        Provider(create: (_) => ScoreService()),
+            ChangeNotifierProvider(create: (_) => GameService()),
+            ChangeNotifierProvider(create: (_) => SettingsService()),
+            ChangeNotifierProvider(create: (_) => shop_service.ShopService()), // <- corrigé
+            Provider(create: (_) => SoundService()),
+            Provider(create: (_) => ScoreService()),
       ],
       child: const MyApp(),
     ),
@@ -30,8 +34,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<SettingsService>(context, listen: true);
-    
+    final settings = Provider.of<SettingsService>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Dino Game',
@@ -102,7 +106,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Dino Game'),
         actions: [
-          const ModeButton(), // Bouton de changement de thème
+          const ModeButton(),
           IconButton(
             icon: const Icon(Icons.shop),
             onPressed: () => _showShop(context),
@@ -130,7 +134,7 @@ class HomeScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).textTheme.titleLarge?.color,
                     shadows: [
-                      Shadow(
+                      const Shadow(
                         color: Colors.green,
                         blurRadius: 10,
                         offset: Offset.zero,
@@ -154,7 +158,7 @@ class HomeScreen extends StatelessWidget {
                 _buildGameButton(
                   context,
                   'Défi du jour',
-                  () => _startGame(context, GameMode.dailyChallenge),
+                  () => _startGame(context, GameMode.challenge),
                   Colors.orange,
                 ),
                 _buildGameButton(

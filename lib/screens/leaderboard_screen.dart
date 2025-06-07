@@ -44,11 +44,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     final scoresData = prefs.getStringList('top_scores') ?? [];
 
     return scoresData
-        .map((jsonString) => _parseScore(jsonString))
-        .whereType<Map<String, dynamic>>()
-        .toList()
-      ..sort((a, b) => b['score'].compareTo(a['score']))
-      ..take(5).toList();
+    .map((jsonString) => _parseScore(jsonString))
+    .whereType<Map<String, dynamic>>()
+    .toList()
+      ..sort((a, b) => b['score'].compareTo(a['score']));
+
   }
 
   Map<String, dynamic>? _parseScore(String jsonString) {
@@ -110,7 +110,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             return _buildEmptyState();
           }
 
-          return _buildLeaderboard(snapshot.data!);
+          return _buildLeaderboard(snapshot.data!.take(5).toList());;
         },
       ),
     );
@@ -126,11 +126,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildLeaderboard(List<Map<String, dynamic>> scores) {
-    return ListView.builder(
-      itemCount: scores.length,
-      itemBuilder: (context, index) => _buildScoreItem(index, scores[index]),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-    );
+    return ListView.separated(
+  itemCount: scores.length,
+  itemBuilder: (context, index) => _buildScoreItem(index, scores[index]),
+  separatorBuilder: (_, __) => const SizedBox(height: 12),
+);
+
   }
 
   Widget _buildScoreItem(int index, Map<String, dynamic> score) {

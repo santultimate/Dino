@@ -1,3 +1,5 @@
+// lib/screens/settings_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
@@ -12,13 +14,19 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late final SettingsService _settingsService;
-  late final SoundService _soundService;
+  late SettingsService _settingsService;
+  late SoundService _soundService;
   bool _isResetting = false;
 
   @override
   void initState() {
     super.initState();
+    // Les services seront assignés dans didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _settingsService = context.read<SettingsService>();
     _soundService = context.read<SoundService>();
   }
@@ -39,7 +47,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Appearance Section
               _buildSectionHeader('Apparence'),
               SettingsTile.switchTile(
                 title: 'Mode sombre',
@@ -55,9 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.animation,
                 onChanged: settings.setAnimationsEnabled,
               ),
-              const Divider(height: 24),
-              
-              // Audio Section
+              const Divider(height: 32),
+
               _buildSectionHeader('Audio'),
               SettingsTile.switchTile(
                 title: 'Musique',
@@ -85,9 +91,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: sound.soundEffectsVolume,
                 onChanged: sound.setSoundEffectsVolume,
               ),
-              const Divider(height: 24),
-              
-              // Game Section
+              const Divider(height: 32),
+
               _buildSectionHeader('Jeu'),
               SettingsTile.dropdownTile<String>(
                 title: 'Difficulté',
@@ -120,8 +125,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-        ),
+              fontWeight: FontWeight.bold,
+            ),
       ),
     );
   }
@@ -129,7 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _handleDarkModeChange(bool value) async {
     try {
       await _settingsService.setDarkMode(value);
-      // Optional: Add theme reload logic here if needed
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,23 +145,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _showResetConfirmation(BuildContext context) async {
     final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmer la réinitialisation'),
-        content: const Text('Voulez-vous vraiment réinitialiser toutes vos données de jeu ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Confirmer la réinitialisation'),
+            content: const Text('Voulez-vous vraiment réinitialiser toutes vos données de jeu ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Réinitialiser',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Réinitialiser', 
-              style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (confirmed && mounted) {
       setState(() => _isResetting = true);

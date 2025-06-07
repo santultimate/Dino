@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_mode.dart';
 import '../screens/game_modes/infinite_mode.dart';
 import '../screens/game_modes/timed_mode.dart';
@@ -53,8 +54,8 @@ class GameModeService with ChangeNotifier {
         return const InfiniteMode();
       case GameMode.timeAttack:
         return const TimedMode();
-      case GameMode.dailyChallenge:
-        return const DailyChallengeMode();
+      case GameMode.challenge:
+        return const challengeMode();
       case GameMode.hardcore:
         return const HardcoreMode();
     }
@@ -67,7 +68,7 @@ class GameModeService with ChangeNotifier {
       case GameMode.timeAttack:
         return '60 secondes pour marquer un max de points\nRecord: ${_highScores[GameMode.timeAttack] ?? 0}';
       case GameMode.dailyChallenge:
-        return 'Défi unique chaque jour\nRecord: ${_highScores[GameMode.dailyChallenge] ?? 0}';
+        return 'Défi unique chaque jour\nRecord: ${_highScores[GameMode.challenge] ?? 0}';
       case GameMode.hardcore:
         return 'Difficulté maximale, un seul essai\nRecord: ${_highScores[GameMode.hardcore] ?? 0}';
     }
@@ -79,7 +80,7 @@ class GameModeService with ChangeNotifier {
         return Icons.all_inclusive;
       case GameMode.timeAttack:
         return Icons.timer;
-      case GameMode.dailyChallenge:
+      case GameMode.challenge:
         return Icons.calendar_today;
       case GameMode.hardcore:
         return Icons.whatshot;
@@ -92,7 +93,7 @@ class GameModeService with ChangeNotifier {
         return Colors.blue;
       case GameMode.timeAttack:
         return Colors.green;
-      case GameMode.dailyChallenge:
+      case GameMode.challenge:
         return Colors.orange;
       case GameMode.hardcore:
         return Colors.red;

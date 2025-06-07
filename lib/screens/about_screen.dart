@@ -141,19 +141,19 @@ class AboutScreen extends StatelessWidget {
               child: Row(
                 children: const [
                   TeamMemberCard(
-                    name: 'Alex Dupont',
+                    name: 'Yacouba SANTARA',
                     role: 'Développeur',
-                    imagePath: 'assets/images/team/alex.jpg',
+                    imagePath: 'assets/images/team/yacou.jpg',
                   ),
                   TeamMemberCard(
-                    name: 'Sophie Martin',
+                    name: 'ABBA SANTARA',
                     role: 'Designer',
-                    imagePath: 'assets/images/team/sophie.jpg',
+                    imagePath: 'assets/images/team/abba.jpg',
                   ),
                   TeamMemberCard(
-                    name: 'Thomas Leroy',
+                    name: 'HAWA SANTARA',
                     role: 'Sound Designer',
-                    imagePath: 'assets/images/team/thomas.jpg',
+                    imagePath: 'assets/images/team/hawa.jpg',
                   ),
                 ],
               ),
@@ -191,12 +191,12 @@ class AboutScreen extends StatelessWidget {
                     ListTile(
                       leading: const Icon(Icons.privacy_tip),
                       title: const Text('Politique de confidentialité'),
-                      onTap: () => _launchURL(context, 'https://exemple.com/privacy'),
+                      onTap: () => _launchURL(context, 'https://yacoubasanta@yahoo.fr/privacy'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.description),
                       title: const Text('Conditions d\'utilisation'),
-                      onTap: () => _launchURL(context, 'https://exemple.com/terms'),
+                      onTap: () => _launchURL(context, 'https://yacoubasanta@yahoo.fr/terms'),
                     ),
                   ],
                 ),

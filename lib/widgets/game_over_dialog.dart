@@ -1,27 +1,30 @@
 import 'package:flutter/material.dart';
+import '../models/power_up_type.dart';
 
 class GameOverDialog extends StatefulWidget {
   final int score;
   final int? highScore;
   final String mode;
-  final int level; // Paramètre level ajouté
+  final int level;
   final VoidCallback onReplay;
   final VoidCallback onMenu;
   final Function(String) onSaveScore;
   final bool showNameInput;
   final int bestScore;
+  final List<PowerUpType>? powerUpsUsed;
 
   const GameOverDialog({
     super.key,
     required this.score,
     this.highScore,
     required this.mode,
-    required this.level, // Marqué comme required
+    required this.level,
     required this.onReplay,
     required this.onMenu,
     required this.onSaveScore,
     this.showNameInput = true,
     required this.bestScore,
+    this.powerUpsUsed,
   });
 
   @override
@@ -115,7 +118,7 @@ class _GameOverDialogState extends State<GameOverDialog>
                 textAlign: TextAlign.center,
               ),
               Text(
-                'Mode: ${widget.mode} • Niveau ${widget.level}', // Affichage du niveau
+                'Mode: ${widget.mode} • Niveau ${widget.level}',
                 style: TextStyle(
                   color: Colors.greenAccent.withOpacity(0.8),
                   fontSize: 14,
@@ -150,7 +153,6 @@ class _GameOverDialogState extends State<GameOverDialog>
                     color: Colors.white.withOpacity(0.8),
                   ),
                 ),
-                
                 if (isNewHighScore || isNewBestScore) ...[
                   const SizedBox(height: 8),
                   if (isNewHighScore)
@@ -158,7 +160,33 @@ class _GameOverDialogState extends State<GameOverDialog>
                   if (isNewBestScore)
                     _buildRecordIndicator('NOUVEAU RECORD GLOBAL!', Colors.greenAccent),
                 ],
-                
+                if (widget.powerUpsUsed != null && widget.powerUpsUsed!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Power-Ups Utilisés:',
+                    style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: widget.powerUpsUsed!
+                        .map((powerUp) => Chip(
+                              label: Text(
+                                powerUp.displayName,
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                              avatar: Image.asset(
+                                powerUp.iconPath,
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                              backgroundColor: Colors.greenAccent,
+                            ))
+                        .toList(),
+                  ),
+                ],
                 if (widget.showNameInput && !_scoreSaved) ...[
                   const SizedBox(height: 20),
                   TextField(
@@ -195,7 +223,6 @@ class _GameOverDialogState extends State<GameOverDialog>
                     ),
                   ),
                 ],
-                
                 if (_scoreSaved)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),

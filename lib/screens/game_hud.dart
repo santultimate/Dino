@@ -29,15 +29,14 @@ class GameHUD extends StatelessWidget {
     final levelColors = _getLevelColors();
     final color = levelColors[(level - 1) % levelColors.length];
 
-    return Column(
+    return Stack(
       children: [
-        // Top Bar with game info
-        _buildTopBar(color),
-        
-        // Game mode indicator
-        _buildModeIndicator(),
-        
-        // Pause overlay if game is paused
+        Column(
+          children: [
+            _buildTopBar(color),
+            _buildModeIndicator(),
+          ],
+        ),
         if (gameState == GameState.paused) _buildPauseOverlay(),
       ],
     );
@@ -101,14 +100,10 @@ class GameHUD extends StatelessWidget {
                 color: Colors.black.withOpacity(0.5),
                 blurRadius: 4,
                 offset: const Offset(1, 1),
-            
-          ),
+              ),
             ],
           ),
         ),
-        
-
-
         Text(
           'Level: $level',
           style: const TextStyle(
@@ -125,9 +120,7 @@ class GameHUD extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          mode == GameMode.timeAttack
-              ? '⏱️ ${remainingTime}s'
-              : '⏱️ ${(score * 0.03).toStringAsFixed(1)}s',
+          _getTimeDisplay(),
           style: const TextStyle(
             fontSize: 18,
             color: Colors.cyanAccent,
@@ -145,9 +138,17 @@ class GameHUD extends StatelessWidget {
     );
   }
 
+  String _getTimeDisplay() {
+    if (mode == GameMode.timeAttack) return '⏱️ ${remainingTime}s';
+    if (mode == GameMode.infinite) return '∞';
+    return '⏱️ ${(score * 0.03).toStringAsFixed(1)}s';
+  }
+
   Widget _buildPauseButton() {
-    if (gameState == GameState.ready) return const SizedBox(width: 48);
-    
+    if (gameState == GameState.ready) {
+      return const SizedBox(width: 48); // Pour garder la symétrie
+    }
+
     return IconButton(
       icon: Icon(
         gameState == GameState.paused ? Icons.play_arrow : Icons.pause,
@@ -186,7 +187,7 @@ class GameHUD extends StatelessWidget {
         return 'INFINI';
       case GameMode.timeAttack:
         return 'CONTRE LA MONTRE';
-      case GameMode.dailyChallenge:
+      case GameMode.challenge:
         return 'DÉFI QUOTIDIEN';
       case GameMode.hardcore:
         return 'HARDCORE';
@@ -212,12 +213,10 @@ class GameHUD extends StatelessWidget {
                       color: Colors.black,
                       blurRadius: 10,
                       offset: Offset(2, 2),
-                         ),
-                
-                    ],
+                    ),
+                  ],
                 ),
               ),
-              
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(

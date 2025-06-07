@@ -1,11 +1,11 @@
+ //lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/game_service.dart';
 import '../services/settings_service.dart';
-import '../widgets/mode_button.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import '../models/game_mode.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -139,6 +139,41 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildModeButton(String label, IconData icon, int delay, VoidCallback onTap) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 500 + delay),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: ElevatedButton.icon(
+          icon: Icon(icon, size: 28, color: Colors.white),
+          label: Text(
+            label,
+            style: const TextStyle(fontSize: 18, color: Colors.white),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade700,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 6,
+          ),
+          onPressed: onTap,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _titleAnimationController.dispose();
@@ -207,30 +242,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         style: TextStyle(fontSize: 20, color: Colors.white70),
                       ),
                       const SizedBox(height: 30),
-                      ModeButton(
-                        label: 'Infini',
-                        icon: Icons.all_inclusive,
-                        delay: 0,
-                        onTap: () => _navigateToGame(GameMode.infinite),
-                      ),
-                      ModeButton(
-                        label: 'Contre-la-montre',
-                        icon: Icons.timer,
-                        delay: 150,
-                        onTap: () => _navigateToGame(GameMode.timeAttack),
-                      ),
-                      ModeButton(
-                        label: 'Défi du jour',
-                        icon: Icons.calendar_today,
-                        delay: 300,
-                        onTap: () => _navigateToGame(GameMode.challenge),
-                      ),
-                      ModeButton(
-                        label: 'Hardcore',
-                        icon: Icons.whatshot,
-                        delay: 450,
-                        onTap: () => _navigateToGame(GameMode.hardcore),
-                      ),
+                      _buildModeButton('Infini', Icons.all_inclusive, 0, () => _navigateToGame(GameMode.infinite)),
+                      _buildModeButton('Contre-la-montre', Icons.timer, 150, () => _navigateToGame(GameMode.timeAttack)),
+                      _buildModeButton('Défi du jour', Icons.calendar_today, 300, () => _navigateToGame(GameMode.challenge)),
+                      _buildModeButton('Hardcore', Icons.whatshot, 450, () => _navigateToGame(GameMode.hardcore)),
                     ],
                   ),
                 ),
