@@ -48,6 +48,16 @@ class SoundManager {
     }
   }
 
+  Future<void> pauseBackgroundMusic() async {
+    await _backgroundPlayer.pause();
+  }
+
+  Future<void> resumeBackgroundMusic() async {
+    if (isMusicOn && _isInitialized) {
+      await _backgroundPlayer.resume();
+    }
+  }
+
   Future<void> stopBackgroundMusic() async {
     await _backgroundPlayer.stop();
   }
@@ -93,6 +103,26 @@ class SoundManager {
     } catch (e) {
       if (kDebugMode) print('❌ Error playing effect $fileName: $e');
     }
+  }
+
+  Future<void> playJumpSound() async {
+    await playEffect('jump.wav');
+  }
+
+  Future<void> playCrashSound() async {
+    await playEffect('hit.wav');
+  }
+
+  Future<void> playGameOverSound() async {
+    await playEffect('gameover.mp3');
+  }
+
+  Future<void> playScoreSound() async {
+    await playEffect('score.wav');
+  }
+
+  Future<void> playCoinSound() async {
+    await playEffect('coin.mp3');
   }
 
   Future<void> dispose() async {

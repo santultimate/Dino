@@ -93,6 +93,15 @@ class GameUtils {
   static double applyNoise(double value, {double intensity = 0.1}) {
     return value + getRandomDouble(-intensity, intensity);
   }
+
+  /// Retourne la couleur basée sur le niveau
+  static Color getLevelColor(int level) {
+    if (level <= 5) return Colors.green;
+    if (level <= 10) return Colors.yellow;
+    if (level <= 15) return Colors.orange;
+    if (level <= 20) return Colors.red;
+    return Colors.purple;
+  }
 }
 
 /// Enumération des niveaux de difficulté

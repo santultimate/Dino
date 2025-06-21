@@ -1,36 +1,34 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/game_mode.dart';
+import '../../models/game_state.dart';
 import '../../services/game_service.dart';
 import '../../services/score_service.dart';
-import '../../services/power_up_service.dart';
 import '../../widgets/dino.dart';
 import '../../widgets/obstacle.dart';
-import '../../widgets/power_up.dart';
 import '../../widgets/game_hud.dart';
 import '../../widgets/game_over_dialog.dart';
+// import '../../utils/sound_manager.dart'; // Décommente si tu as un gestionnaire audio
 
-class InfiniteMode extends StatefulWidget {
-  const InfiniteMode({super.key});
+class DailyChallengeMode extends StatefulWidget {
+  const DailyChallengeMode({super.key});
 
   @override
-  State<InfiniteMode> createState() => _InfiniteModeState();
+  State<DailyChallengeMode> createState() => _DailyChallengeModeState();
 }
 
-class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderStateMixin {
+class _DailyChallengeModeState extends State<DailyChallengeMode> with SingleTickerProviderStateMixin {
   late final GameService _gameService;
   late final ScoreService _scoreService;
-  late final PowerUpService _powerUpService;
-  late AnimationController _shakeController;
-  StreamSubscription? _gameStateSubscription; // Ajout pour gérer la souscription
+  late final AnimationController _shakeController;
 
   @override
   void initState() {
     super.initState();
     _gameService = Provider.of<GameService>(context, listen: false);
     _scoreService = Provider.of<ScoreService>(context, listen: false);
-    _powerUpService = Provider.of<PowerUpService>(context, listen: false);
-    
+
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -42,16 +40,13 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
   }
 
   Future<void> _initializeGame() async {
-    await _gameService.initialize(mode: GameMode.infinite);
-    // Remplacement de addListener par un StreamSubscription pour une meilleure gestion
-    _gameStateSubscription = _gameService.gameStateStream.listen((_) {
-      _gameStateListener();
-    });
+    await _gameService.initialize(mode: GameMode.challenge);
+    if (!mounted) return;
+    _gameService.addListener(_gameStateListener);
   }
 
   void _gameStateListener() {
     if (!mounted) return;
-    
     if (_gameService.state == GameState.gameOver) {
       _handleGameOver();
     }
@@ -61,7 +56,7 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
   Future<void> _handleGameOver() async {
     _shakeController.forward(from: 0);
     await _scoreService.saveScore(
-      mode: GameMode.infinite,
+      mode: GameMode.challenge,
       score: _gameService.currentScore,
       level: _gameService.level,
     );
@@ -70,20 +65,30 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
   }
 
   void _showGameOverDialog() {
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => GameOverDialog(
         score: _gameService.currentScore,
-        bestScore: _scoreService.getBestScore(GameMode.infinite),
+        bestScore: 0, // Will be updated with actual value
+        mode: 'Daily Challenge',
         level: _gameService.level,
-        onRestart: _restartGame,
+        onReplay: _restartGame,
+        onMenu: () {
+          Navigator.of(context).pop(); // Close dialog
+          Navigator.of(context).pop(); // Go back to menu
+        },
+        onSaveScore: (name) async {
+          // Handle score saving if needed
+        },
       ),
     );
   }
 
   Future<void> _restartGame() async {
-    Navigator.of(context).pop(); // Fermer le dialogue avant de redémarrer
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Fermer le dialog
     await _gameService.reset();
     if (mounted) setState(() {});
   }
@@ -93,11 +98,12 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
       _gameService.start();
     }
     _gameService.jump();
+    // SoundManager.playJump(); // Active si tu utilises un sound manager
   }
 
   @override
   void dispose() {
-    _gameStateSubscription?.cancel(); // Annulation de la souscription
+    _gameService.removeListener(_gameStateListener);
     _shakeController.dispose();
     super.dispose();
   }
@@ -105,9 +111,6 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final gameState = _gameService.state;
-    final dinoY = _gameService.dinoPosition;
-    final obstacles = _gameService.obstacles;
-    final powerUps = _powerUpService.activePowerUps;
 
     return Scaffold(
       backgroundColor: Colors.blueGrey[900],
@@ -115,77 +118,87 @@ class _InfiniteModeState extends State<InfiniteMode> with SingleTickerProviderSt
         onTap: _jump,
         child: Stack(
           children: [
-            // Game Background
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/desert_bg.png',
-                fit: BoxFit.cover,
-                color: Colors.grey[800],
-                colorBlendMode: BlendMode.multiply,
-              ),
-            ),
+            _buildBackground(),
+            _buildShakeContent(),
+            _buildHUD(gameState),
+            if (gameState == GameState.ready) _buildStartMessage(),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Game Elements with Shake Effect
-            AnimatedBuilder(
-              animation: _shakeController,
-              builder: (context, child) {
-                final shakeOffset = _shakeController.value * 10 * (1 - _shakeController.value);
-                return Transform.translate(
-                  offset: Offset(shakeOffset, 0),
-                  child: child,
-                );
-              },
-              child: Stack(
-                children: [
-                  DinoWidget(
-                    positionY: dinoY,
-                    isJumping: _gameService.isJumping,
-                    skin: _scoreService.selectedSkin,
-                  ),
-                  ...obstacles.map((o) => ObstacleWidget(
-                    positionX: o.position, 
-                    type: o.type,
-                    key: ValueKey(o.id), // Ajout d'une clé unique pour chaque obstacle
-                  )),
-                  ...powerUps.map((p) => PowerUpWidget(
-                    positionX: p.position, 
-                    type: p.type,
-                    key: ValueKey(p.id), // Ajout d'une clé unique pour chaque power-up
-                  )),
-                ],
-              ),
-            ),
+  Widget _buildBackground() {
+    return Positioned.fill(
+      child: Image.asset(
+        'assets/images/background.png',
+        fit: BoxFit.cover,
+        color: Colors.grey[800],
+        colorBlendMode: BlendMode.multiply,
+      ),
+    );
+  }
 
-            // Game HUD
-            GameHUD(
-              score: _gameService.currentScore,
-              bestScore: _scoreService.getBestScore(GameMode.infinite),
-              level: _gameService.level,
-              mode: GameMode.infinite,
-              gameState: gameState,
-              onPause: _gameService.togglePause,
-              onExit: () => Navigator.pop(context),
-            ),
+  Widget _buildShakeContent() {
+    final dinoY = _gameService.dinoPosition;
+    final obstaclePosition = _gameService.obstaclePosition;
+    final currentObstacle = _gameService.currentObstacle;
 
-            // Start Message
-            if (gameState == GameState.ready)
-              const Center(
-                child: Text(
-                  'TAP TO START',
-                  style: TextStyle(
-                    fontSize: 32,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black,
-                        blurRadius: 10,
-                        offset: Offset(0, 0),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+    return AnimatedBuilder(
+      animation: _shakeController,
+      builder: (context, child) {
+        final shakeOffset = _shakeController.value * 10 * (1 - _shakeController.value);
+        return Transform.translate(offset: Offset(shakeOffset, 0), child: child);
+      },
+      child: Stack(
+        children: [
+          DinoWidget(
+            dinoY: dinoY,
+            isJumping: _gameService.isJumping,
+          ),
+          ObstacleWidget(
+            positionX: obstaclePosition * MediaQuery.of(context).size.width,
+            assetPath: _getObstacleAsset(currentObstacle),
+          ),
+          // Power-ups will be added here when power-up system is implemented
+        ],
+      ),
+    );
+  }
+
+  String _getObstacleAsset(dynamic obstacleType) {
+    // This is a placeholder - you'll need to implement proper obstacle type handling
+    return 'assets/images/cactus.png';
+  }
+
+  Widget _buildHUD(GameState gameState) {
+    return GameHUD(
+      score: _gameService.currentScore,
+      bestScore: 0, // Will be updated with actual value
+      level: _gameService.level,
+      mode: GameMode.challenge,
+      gameState: gameState,
+      onPause: _gameService.togglePause,
+      onExit: () {
+        if (mounted) Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildStartMessage() {
+    return const Center(
+      child: Text(
+        'TAP TO START',
+        style: TextStyle(
+          fontSize: 32,
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: Colors.black,
+              blurRadius: 10,
+              offset: Offset(0, 0),
+            ),
           ],
         ),
       ),

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
-class Cloud extends StatelessWidget {
-  const Cloud({super.key});
+class Ground extends StatelessWidget {
+  const Ground({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 60,
-      height: 20,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
+      width: double.infinity,
+      height: 100,
+      decoration: const BoxDecoration(
+        color: Color(0xFF8B4513),
+        border: Border(
+          top: BorderSide(color: Color(0xFF654321), width: 2),
+        ),
       ),
     );
   }

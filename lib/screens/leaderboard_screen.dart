@@ -110,7 +110,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             return _buildEmptyState();
           }
 
-          return _buildLeaderboard(snapshot.data!.take(5).toList());;
+          return _buildLeaderboard(snapshot.data!.take(5).toList());
         },
       ),
     );

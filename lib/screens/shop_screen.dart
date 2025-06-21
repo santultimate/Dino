@@ -30,17 +30,16 @@ class ShopScreen extends StatelessWidget {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _buildCategorySection(context, 'Personnages'),
-                _buildCategorySection(context, 'Fonds'),
-                _buildCategorySection(context, 'Power-ups'),
+                _buildCategorySection(context, shopService, ShopItemType.characterSkin, 'Personnages'),
+                _buildCategorySection(context, shopService, ShopItemType.decoration, 'Fonds'),
+                _buildCategorySection(context, shopService, ShopItemType.powerUp, 'Power-ups'),
               ],
             ),
     );
   }
 
-  Widget _buildCategorySection(BuildContext context, String category) {
-    final shopService = Provider.of<ShopService>(context);
-    final items = shopService.getItemsByCategory(category);
+  Widget _buildCategorySection(BuildContext context, ShopService shopService, ShopItemType type, String categoryName) {
+    final items = shopService.getItemsByType(type);
 
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -51,7 +50,7 @@ class ShopScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            category,
+            categoryName,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),

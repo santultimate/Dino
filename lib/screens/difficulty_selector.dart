@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
-import '../services/game_mode_service.dart';
-import '../widgets/mode_card.dart';
+import 'game_mode_service.dart';
+import 'mode_card.dart';
 import '../models/game_mode.dart';
 
 class DifficultySelectorScreen extends StatefulWidget {
@@ -35,7 +35,7 @@ class _DifficultySelectorScreenState extends State<DifficultySelectorScreen> wit
       'difficulty': '⭐⭐',
     },
     {
-      'type': GameMode.dailyChallenge,
+      'type': GameMode.challenge,
       'title': 'Défi Quotidien',
       'subtitle': 'Un challenge unique chaque jour',
       'icon': Icons.calendar_today,

@@ -89,14 +89,12 @@ class FirebaseService {
       final newUser = UserModel(
         uid: user.uid,
         username: username,
-        email: user.email,
         coins: 100,
         ownedSkins: ['default'],
         selectedSkin: 'default',
-        highScores: {},
+        highScore: 0,
         achievements: [],
         lastLogin: DateTime.now(),
-        createdAt: DateTime.now(),
       );
       await userRef.set(newUser.toJson());
     }
@@ -164,10 +162,10 @@ class FirebaseService {
         ...gameData,
       });
 
-      final currentHigh = _cachedUser?.highScores[mode] ?? 0;
+      final currentHigh = _cachedUser?.highScore ?? 0;
       if (score > currentHigh) {
         batch.update(userRef, {
-          'highScores.$mode': score,
+          'highScore': score,
           'lastPlayed': FieldValue.serverTimestamp(),
         });
       }

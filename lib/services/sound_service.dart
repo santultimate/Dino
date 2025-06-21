@@ -4,7 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import '../models/sound_type.dart';
 
-class SoundService {
+class SoundService with ChangeNotifier {
   static final SoundService _instance = SoundService._internal();
   factory SoundService() => _instance;
   SoundService._internal();
@@ -18,6 +18,12 @@ class SoundService {
   bool _areEffectsOn = true;
   double _musicVolume = 0.5;
   double _effectsVolume = 0.7;
+
+  // Getters for settings screen
+  bool get musicEnabled => _isMusicOn;
+  bool get soundEffectsEnabled => _areEffectsOn;
+  double get musicVolume => _musicVolume;
+  double get soundEffectsVolume => _effectsVolume;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -62,23 +68,35 @@ class SoundService {
   Future<void> setMusicVolume(double volume) async {
     _musicVolume = volume.clamp(0.0, 1.0);
     await _bgPlayer.setVolume(_musicVolume);
+    notifyListeners();
   }
 
-  void setEffectsVolume(double volume) {
+  Future<void> setSoundEffectsVolume(double volume) async {
     _effectsVolume = volume.clamp(0.0, 1.0);
+    notifyListeners();
   }
 
-  Future<void> toggleMusic(bool isOn) async {
-    _isMusicOn = isOn;
-    if (isOn) {
+  Future<void> setMusicEnabled(bool enabled) async {
+    _isMusicOn = enabled;
+    if (enabled) {
       await playBackgroundMusic();
     } else {
       await stopBackgroundMusic();
     }
+    notifyListeners();
+  }
+
+  Future<void> setSoundEffectsEnabled(bool enabled) async {
+    _areEffectsOn = enabled;
+    notifyListeners();
+  }
+
+  Future<void> toggleMusic(bool isOn) async {
+    await setMusicEnabled(isOn);
   }
 
   void toggleEffects(bool isOn) {
-    _areEffectsOn = isOn;
+    setSoundEffectsEnabled(isOn);
   }
 
   Future<void> playSoundEffect(SoundType type) async {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../widgets/dino.dart';
-import '../../widgets/obstacle.dart';
-import '../../widgets/ground.dart';
-import '../../widgets/cloud.dart';
+import '../../widgets/dino.dart' as dino_widget;
+import '../../widgets/obstacle.dart' as obstacle_widget;
+import '../../widgets/ground.dart' as ground_widget;
+import '../../widgets/cloud.dart' as cloud_widget;
 import '../../utils/sound_manager.dart';
 
 class HardcoreMode extends StatefulWidget {
@@ -126,7 +126,7 @@ class _HardcoreModeState extends State<HardcoreMode> with SingleTickerProviderSt
       time = 0;
       initialHeight = dinoY;
       isJumping = true;
-      SoundManager.playJump();
+      SoundManager().playJumpSound();
     }
   }
 
@@ -154,7 +154,7 @@ class _HardcoreModeState extends State<HardcoreMode> with SingleTickerProviderSt
       isGameOver = true;
     });
     gameTimer?.cancel();
-    SoundManager.playGameOver();
+    SoundManager().playGameOverSound();
 
     showDialog(
       context: context,
@@ -241,28 +241,32 @@ class _HardcoreModeState extends State<HardcoreMode> with SingleTickerProviderSt
             ...cloudXs.map((x) => AnimatedContainer(
               alignment: Alignment(x, -0.7),
               duration: Duration(milliseconds: isPaused ? 0 : 100),
-              child: const Cloud(),
-            )).toList(),
+              child: cloud_widget.Cloud(),
+            )),
 
             // Ground
             const Align(
               alignment: Alignment.bottomCenter,
-              child: Ground(),
+              child: ground_widget.Ground(),
             ),
 
             // Dino player
             AnimatedContainer(
               alignment: Alignment(-0.8, dinoY),
               duration: Duration(milliseconds: isPaused ? 0 : 100),
-              child: DinoPlayer(isDucking: isDucking),
+              child: dino_widget.DinoWidget(
+                dinoY: 0,
+                isDucking: isDucking,
+                isJumping: isJumping,
+              ),
             ),
 
             // Obstacles
             ...obstacleXs.map((x) => AnimatedContainer(
               alignment: Alignment(x, 1),
               duration: Duration(milliseconds: isPaused ? 0 : 100),
-              child: const Obstacle(),
-            )).toList(),
+              child: obstacle_widget.ObstacleWidget(positionX: x * 100),
+            )),
 
             // UI Elements
             Positioned(
@@ -282,6 +286,7 @@ class _HardcoreModeState extends State<HardcoreMode> with SingleTickerProviderSt
                           blurRadius: 2,
                           color: Colors.white,
                           offset: Offset(0, 0),
+                        ),
                       ],
                     ),
                   ),

@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:audioplayers/audioplayers.dart';
-import '../widgets/dino.dart';
-import '../widgets/obstacle.dart';
-import '../utils/game_utils.dart';
-import '../utils/sound_manager.dart';
-import '../utils/game_constants.dart';
-import '../utils/game_physics.dart';
-import '../widgets/game_over_dialog.dart';
+import '../../widgets/dino.dart';
+import '../../widgets/obstacle.dart';
+import '../../utils/game_utils.dart';
+import '../../utils/sound_manager.dart';
+import '../../utils/game_constants.dart';
+import '../../utils/game_physics.dart';
+import '../../widgets/game_over_dialog.dart';
 
 enum GameMode { infinite, timeAttack, dailyChallenge, hardcore }
 
@@ -152,9 +152,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         score: score,
         bestScore: bestScore,
         level: level,
-        topScores: topScores,
-        onRestart: _resetGame,
-        onExit: () => Navigator.pop(context),
+        mode: widget.mode.name,
+        onReplay: _resetGame,
+        onMenu: () => Navigator.pop(context),
+        onSaveScore: (name) async {
+          // Save score logic here
+          if (kDebugMode) print('Score saved for $name: $score');
+        },
       ),
     );
   }
@@ -192,7 +196,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         body: Stack(
           children: [
             _buildBackground(),
-            DinoWidget(positionY: dinoY),
+            DinoWidget(dinoY: dinoY),
             ObstacleWidget(positionX: obstacleX),
             _buildGameInfo(),
             if (!gameStarted && !isGameOver) _buildStartPrompt(),

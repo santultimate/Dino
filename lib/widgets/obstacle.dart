@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 class ObstacleWidget extends StatelessWidget {
-  final double obstacleX; // Position horizontale en pixels
-  final double obstacleY; // Position verticale en pixels
+  final double positionX; // Position horizontale sur l'écran
+  final double obstacleY; // Décalage vertical supplémentaire
   final String assetPath;
   final double width;
   final double height;
   final bool isAnimated;
-  final double animationValue; // Pour les animations (0.0 à 1.0)
+  final double animationValue;
   final VoidCallback? onCollide;
-  final Hitbox hitbox; // Zone de collision personnalisable
+  final Hitbox hitbox;
 
   const ObstacleWidget({
     super.key,
-    required this.obstacleX,
+    required this.positionX,
     this.obstacleY = 0,
     this.assetPath = 'assets/images/cactus.png',
     this.width = 40,
@@ -21,16 +21,16 @@ class ObstacleWidget extends StatelessWidget {
     this.isAnimated = false,
     this.animationValue = 0,
     this.onCollide,
-    this.hitbox = const Hitbox(0.8, 0.9), // Par défaut: 80% largeur, 90% hauteur
+    this.hitbox = const Hitbox(0.8, 0.9),
   });
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final baseY = screenHeight * 0.2; // Niveau du sol
+    final baseY = screenHeight * 0.2;
 
     return Positioned(
-      left: obstacleX,
+      left: positionX,
       bottom: baseY + obstacleY,
       child: GestureDetector(
         onTap: onCollide,
@@ -39,11 +39,9 @@ class ObstacleWidget extends StatelessWidget {
           height: height,
           child: Stack(
             children: [
-              // Obstacle visuel
               _buildObstacleVisual(),
-              
-              // Debug: Afficher la hitbox (à désactiver en production)
-              if (false) _buildHitboxDebug(),
+              // Activez ceci pour debuguer les zones de collision
+              // _buildHitboxDebug(),
             ],
           ),
         ),
@@ -53,8 +51,8 @@ class ObstacleWidget extends StatelessWidget {
 
   Widget _buildObstacleVisual() {
     return Transform(
-      transform: isAnimated 
-          ? Matrix4.rotationZ(animationValue * 0.1) // Exemple d'animation
+      transform: isAnimated
+          ? Matrix4.rotationZ(animationValue * 0.1)
           : Matrix4.identity(),
       alignment: Alignment.bottomCenter,
       child: Image.asset(
@@ -64,7 +62,7 @@ class ObstacleWidget extends StatelessWidget {
         fit: BoxFit.contain,
         filterQuality: FilterQuality.low,
         isAntiAlias: true,
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        frameBuilder: (context, child, frame, _) {
           return AnimatedOpacity(
             opacity: frame != null ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
@@ -91,10 +89,9 @@ class ObstacleWidget extends StatelessWidget {
   }
 }
 
-/// Définit une zone de collision personnalisable
 class Hitbox {
-  final double widthRatio; // Ratio de la largeur (0.0 à 1.0)
-  final double heightRatio; // Ratio de la hauteur (0.0 à 1.0)
+  final double widthRatio;
+  final double heightRatio;
 
   const Hitbox(this.widthRatio, this.heightRatio)
       : assert(widthRatio > 0 && widthRatio <= 1),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_mode.dart';
-import '../screens/game_modes/infinite_mode.dart';
-import '../screens/game_modes/timed_mode.dart';
-import '../screens/game_modes/daily_challenge_mode.dart';
-import '../screens/game_modes/hardcore_mode.dart';
+import '../screens/game_modes/infinite_mode.dart' as infinite;
+import '../screens/game_modes/timed_mode.dart' as timed;
+import '../screens/game_modes/hardcore_mode.dart' as hardcore;
 
 class GameModeService with ChangeNotifier {
   GameMode _currentMode = GameMode.infinite;
@@ -51,27 +50,29 @@ class GameModeService with ChangeNotifier {
   Widget getModeScreen() {
     switch (_currentMode) {
       case GameMode.infinite:
-        return const InfiniteMode();
+        return const infinite.InfiniteMode();
       case GameMode.timeAttack:
-        return const TimedMode();
+        return timed.GameScreen(mode: timed.GameMode.timeAttack);
       case GameMode.challenge:
-        return const challengeMode();
+        return timed.GameScreen(mode: timed.GameMode.dailyChallenge);
       case GameMode.hardcore:
-        return const HardcoreMode();
+        return const hardcore.HardcoreMode();
     }
+    throw UnimplementedError('Unknown game mode: \\_currentMode');
   }
 
   String getModeDescription(GameMode mode) {
     switch (mode) {
       case GameMode.infinite:
-        return 'Course sans limite de temps\nRecord: ${_highScores[GameMode.infinite] ?? 0}';
+        return 'Course sans limite de temps\nRecord: \\${_highScores[GameMode.infinite] ?? 0}';
       case GameMode.timeAttack:
-        return '60 secondes pour marquer un max de points\nRecord: ${_highScores[GameMode.timeAttack] ?? 0}';
-      case GameMode.dailyChallenge:
-        return 'Défi unique chaque jour\nRecord: ${_highScores[GameMode.challenge] ?? 0}';
+        return '60 secondes pour marquer un max de points\nRecord: \\${_highScores[GameMode.timeAttack] ?? 0}';
+      case GameMode.challenge:
+        return 'Défi unique chaque jour\nRecord: \\${_highScores[GameMode.challenge] ?? 0}';
       case GameMode.hardcore:
-        return 'Difficulté maximale, un seul essai\nRecord: ${_highScores[GameMode.hardcore] ?? 0}';
+        return 'Difficulté maximale, un seul essai\nRecord: \\${_highScores[GameMode.hardcore] ?? 0}';
     }
+    throw UnimplementedError('Unknown game mode: \\mode');
   }
 
   IconData getModeIcon(GameMode mode) {
@@ -85,6 +86,7 @@ class GameModeService with ChangeNotifier {
       case GameMode.hardcore:
         return Icons.whatshot;
     }
+    throw UnimplementedError('Unknown game mode: \\mode');
   }
 
   Color getModeColor(GameMode mode) {
@@ -98,5 +100,6 @@ class GameModeService with ChangeNotifier {
       case GameMode.hardcore:
         return Colors.red;
     }
+    throw UnimplementedError('Unknown game mode: \\mode');
   }
 }

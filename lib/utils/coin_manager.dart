@@ -74,7 +74,7 @@ class CoinManager {
     }
 
     if (_cachedCoins < amount) {
-      debugPrint('Insufficient coins: ${_cachedCoins} < $amount');
+      debugPrint('Insufficient coins: $_cachedCoins < $amount');
       return false;
     }
 

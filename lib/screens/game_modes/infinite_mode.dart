@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/dino.dart';
 import '../../widgets/obstacle.dart';
 import '../../widgets/power_up.dart';
+import '../../widgets/scrolling_background.dart';
+import '../../widgets/game_over_dialog.dart';
 import '../../utils/game_utils.dart';
 import '../../utils/sound_manager.dart';
-import '../../widgets/scrolling_background.dart';
+import '../../models/power_up_type.dart';
 
 class InfiniteMode extends StatefulWidget {
   const InfiniteMode({super.key});
@@ -27,9 +29,10 @@ class _InfiniteModeState extends State<InfiniteMode>
   int highScore = 0;
   double backgroundOffset = 0;
 
-  // Game Objects
-  final List<Obstacle> obstacles = [];
-  final List<PowerUp> powerUps = [];
+  // Game Objects (store positions)
+  final List<double> obstacleXs = [];
+  final List<double> powerUpXs = [];
+  final List<PowerUpType> powerUpTypes = [];
   Timer? gameLoopTimer;
   late AnimationController _animationController;
 
@@ -49,7 +52,7 @@ class _InfiniteModeState extends State<InfiniteMode>
       duration: const Duration(milliseconds: 100),
     );
     _loadHighScore();
-    SoundManager.initialize();
+    SoundManager().initialize();
   }
 
   Future<void> _loadHighScore() async {
@@ -64,7 +67,6 @@ class _InfiniteModeState extends State<InfiniteMode>
 
   void _startGame() {
     if (isGameStarted) return;
-    
     setState(() {
       isGameStarted = true;
       isGameOver = false;
@@ -72,11 +74,11 @@ class _InfiniteModeState extends State<InfiniteMode>
       dinoY = groundLevel;
       velocity = 0;
       backgroundOffset = 0;
-      obstacles.clear();
-      powerUps.clear();
+      obstacleXs.clear();
+      powerUpXs.clear();
+      powerUpTypes.clear();
     });
-
-    SoundManager.playBackgroundMusic();
+    SoundManager().playBackgroundMusic();
     _startGameLoop();
   }
 
@@ -90,7 +92,6 @@ class _InfiniteModeState extends State<InfiniteMode>
 
   void _updateGame() {
     if (!mounted || isGameOver) return;
-
     setState(() {
       _updatePhysics();
       _updateBackground();
@@ -104,7 +105,6 @@ class _InfiniteModeState extends State<InfiniteMode>
   void _updatePhysics() {
     velocity += gravity * 0.016; // Frame-time adjusted
     dinoY -= velocity * 0.016;
-
     // Ground collision
     if (dinoY > groundLevel) {
       dinoY = groundLevel;
@@ -119,28 +119,44 @@ class _InfiniteModeState extends State<InfiniteMode>
   }
 
   void _updateObjects() {
-    obstacles.removeWhere((obs) => obs.update());
-    powerUps.removeWhere((pu) => pu.update());
+    for (int i = 0; i < obstacleXs.length; i++) {
+      obstacleXs[i] -= gameSpeed * 2;
+    }
+    for (int i = 0; i < powerUpXs.length; i++) {
+      powerUpXs[i] -= gameSpeed * 2;
+    }
+    // Remove off-screen objects
+    obstacleXs.removeWhere((x) => x < -1.2);
+    for (int i = powerUpXs.length - 1; i >= 0; i--) {
+      if (powerUpXs[i] < -1.2) {
+        powerUpXs.removeAt(i);
+        powerUpTypes.removeAt(i);
+      }
+    }
   }
 
   void _checkCollisions() {
-    if (obstacles.any((obs) => obs.collidesWith(dinoY))) {
-      _endGame();
-    }
-    
-    // Check power-up collisions
-    powerUps.removeWhere((pu) {
-      if (pu.collidesWith(dinoY)) {
-        _applyPowerUp(pu.type);
-        return true;
+    // Simple collision check: if obstacle is close to dino
+    for (final x in obstacleXs) {
+      if (x < 0.2 && x > -0.2 && dinoY == groundLevel) {
+        _endGame();
+        return;
       }
-      return false;
-    });
+    }
+    // Power-up collision
+    for (int i = 0; i < powerUpXs.length; i++) {
+      if (powerUpXs[i] < 0.2 && powerUpXs[i] > -0.2 && dinoY == groundLevel) {
+        _applyPowerUp(powerUpTypes[i]);
+        powerUpXs.removeAt(i);
+        powerUpTypes.removeAt(i);
+        break;
+      }
+    }
   }
 
   void _applyPowerUp(PowerUpType type) {
-    SoundManager.playPowerUp();
-    // Implement power-up effects
+    SoundManager().playCoinSound(); // Use coin sound for now
+    // Implement power-up effects here
   }
 
   void _updateScore() {
@@ -153,29 +169,29 @@ class _InfiniteModeState extends State<InfiniteMode>
 
   void _spawnObjects() {
     if (score % obstacleInterval == 0) {
-      obstacles.add(Obstacle(speed: gameSpeed * 2));
+      obstacleXs.add(1.2); // Spawn at right edge
     }
     if (score % powerUpInterval == 0) {
-      powerUps.add(PowerUp(speed: gameSpeed * 2));
+      powerUpXs.add(1.2);
+      powerUpTypes.add(PowerUpType.shield); // Example type
     }
   }
 
   void _jump() {
     if (isJumping || isGameOver) return;
-    
     setState(() {
       isJumping = true;
       velocity = jumpForce;
       _animationController.forward(from: 0);
     });
-    SoundManager.playJump();
+    SoundManager().playJumpSound();
   }
 
   void _endGame() {
     gameLoopTimer?.cancel();
     setState(() => isGameOver = true);
-    SoundManager.playGameOver();
-    SoundManager.pauseBackgroundMusic();
+    SoundManager().playGameOverSound();
+    SoundManager().pauseBackgroundMusic();
     _showGameOverDialog();
   }
 
@@ -185,9 +201,12 @@ class _InfiniteModeState extends State<InfiniteMode>
       barrierDismissible: false,
       builder: (_) => GameOverDialog(
         score: score,
-        highScore: highScore,
-        onRestart: _startGame,
-        onExit: () => Navigator.pop(context),
+        bestScore: highScore,
+        level: 1,
+        mode: 'infinite',
+        onReplay: _startGame,
+        onMenu: () => Navigator.pop(context),
+        onSaveScore: (name) {},
       ),
     );
   }
@@ -196,7 +215,7 @@ class _InfiniteModeState extends State<InfiniteMode>
   void dispose() {
     gameLoopTimer?.cancel();
     _animationController.dispose();
-    SoundManager.dispose();
+    SoundManager().dispose();
     super.dispose();
   }
 
@@ -209,10 +228,10 @@ class _InfiniteModeState extends State<InfiniteMode>
         backgroundColor: Colors.blueGrey[900],
         body: Stack(
           children: [
-            ScrollingBackground(offset: backgroundOffset),
-            Dino(yPosition: dinoY, isJumping: isJumping),
-            ...obstacles.map((o) => o.build(context)),
-            ...powerUps.map((p) => p.build(context)),
+            ScrollingBackground(scrollFactor: backgroundOffset),
+            DinoWidget(dinoY: dinoY, isJumping: isJumping),
+            ...obstacleXs.map((x) => ObstacleWidget(positionX: x * MediaQuery.of(context).size.width)),
+            ...powerUpXs.map((x) => PowerUpWidget(xPosition: x)),
             _buildScoreDisplay(),
             if (!isGameStarted && !isGameOver) _buildStartButton(),
           ],
@@ -248,53 +267,6 @@ class _InfiniteModeState extends State<InfiniteMode>
         child: const Text('START GAME', 
             style: TextStyle(fontSize: 18, color: Colors.white)),
       ),
-    );
-  }
-}
-
-// GameOverDialog.dart (separate file)
-class GameOverDialog extends StatelessWidget {
-  final int score;
-  final int highScore;
-  final VoidCallback onRestart;
-  final VoidCallback onExit;
-
-  const GameOverDialog({
-    super.key,
-    required this.score,
-    required this.highScore,
-    required this.onRestart,
-    required this.onExit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey[900],
-      title: const Text('Game Over', 
-          style: TextStyle(color: Colors.white, fontSize: 24)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Score: $score', 
-              style: const TextStyle(color: Colors.white, fontSize: 20)),
-          const SizedBox(height: 10),
-          Text('High Score: $highScore', 
-              style: const TextStyle(color: Colors.white70, fontSize: 18)),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: onRestart,
-          child: const Text('Restart', 
-              style: TextStyle(color: Colors.green)),
-        ),
-        TextButton(
-          onPressed: onExit,
-          child: const Text('Exit', 
-              style: TextStyle(color: Colors.red)),
-        ),
-      ],
     );
   }
 }

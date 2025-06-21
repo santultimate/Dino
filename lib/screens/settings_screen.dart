@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../services/sound_service.dart';
-import '../widgets/settings_tile.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,7 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Les services seront assignés dans didChangeDependencies
   }
 
   @override
@@ -48,69 +46,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               _buildSectionHeader('Apparence'),
-              SettingsTile.switchTile(
-                title: 'Mode sombre',
-                subtitle: 'Activer le thème sombre',
+              SwitchListTile(
+                title: const Text('Mode sombre'),
+                subtitle: const Text('Activer le thème sombre'),
                 value: settings.isDarkMode,
-                icon: Icons.dark_mode,
+                secondary: const Icon(Icons.dark_mode),
                 onChanged: _handleDarkModeChange,
               ),
-              SettingsTile.switchTile(
-                title: 'Animations',
-                subtitle: 'Activer les effets animés',
+              SwitchListTile(
+                title: const Text('Animations'),
+                subtitle: const Text('Activer les effets animés'),
                 value: settings.animationsEnabled,
-                icon: Icons.animation,
+                secondary: const Icon(Icons.animation),
                 onChanged: settings.setAnimationsEnabled,
               ),
               const Divider(height: 32),
 
               _buildSectionHeader('Audio'),
-              SettingsTile.switchTile(
-                title: 'Musique',
-                subtitle: 'Activer la musique de fond',
+              SwitchListTile(
+                title: const Text('Musique'),
+                subtitle: const Text('Activer la musique de fond'),
                 value: sound.musicEnabled,
-                icon: Icons.music_note,
+                secondary: const Icon(Icons.music_note),
                 onChanged: sound.setMusicEnabled,
               ),
-              SettingsTile.switchTile(
-                title: 'Effets sonores',
-                subtitle: 'Activer les sons du jeu',
+              SwitchListTile(
+                title: const Text('Effets sonores'),
+                subtitle: const Text('Activer les sons du jeu'),
                 value: sound.soundEffectsEnabled,
-                icon: Icons.volume_up,
+                secondary: const Icon(Icons.volume_up),
                 onChanged: sound.setSoundEffectsEnabled,
               ),
-              SettingsTile.sliderTile(
-                title: 'Volume musique',
-                icon: Icons.volume_down,
-                value: sound.musicVolume,
-                onChanged: sound.setMusicVolume,
+              ListTile(
+                title: const Text('Volume musique'),
+                leading: const Icon(Icons.volume_down),
+                subtitle: Slider(
+                  value: sound.musicVolume,
+                  onChanged: sound.setMusicVolume,
+                  min: 0,
+                  max: 1,
+                  divisions: 10,
+                  label: (sound.musicVolume * 100).round().toString(),
+                ),
               ),
-              SettingsTile.sliderTile(
-                title: 'Volume effets',
-                icon: Icons.volume_up,
-                value: sound.soundEffectsVolume,
-                onChanged: sound.setSoundEffectsVolume,
+              ListTile(
+                title: const Text('Volume effets'),
+                leading: const Icon(Icons.volume_up),
+                subtitle: Slider(
+                  value: sound.soundEffectsVolume,
+                  onChanged: sound.setSoundEffectsVolume,
+                  min: 0,
+                  max: 1,
+                  divisions: 10,
+                  label: (sound.soundEffectsVolume * 100).round().toString(),
+                ),
               ),
               const Divider(height: 32),
 
               _buildSectionHeader('Jeu'),
-              SettingsTile.dropdownTile<String>(
-                title: 'Difficulté',
-                icon: Icons.speed,
-                value: settings.difficulty,
-                items: const [
-                  DropdownMenuItem(value: 'easy', child: Text('Facile')),
-                  DropdownMenuItem(value: 'medium', child: Text('Moyen')),
-                  DropdownMenuItem(value: 'hard', child: Text('Difficile')),
-                ],
-                onChanged: settings.setDifficulty,
+              ListTile(
+                leading: const Icon(Icons.speed),
+                title: const Text('Difficulté'),
+                trailing: DropdownButton<String>(
+                  value: settings.difficulty,
+                  items: const [
+                    DropdownMenuItem(value: 'easy', child: Text('Facile')),
+                    DropdownMenuItem(value: 'medium', child: Text('Moyen')),
+                    DropdownMenuItem(value: 'hard', child: Text('Difficile')),
+                  ],
+                  onChanged: (String? value) {
+                  if (value != null) {
+                      settings.setDifficulty(value);
+                    }
+                  },
+                ),
               ),
-              SettingsTile.actionTile(
-                title: 'Réinitialiser la progression',
-                icon: Icons.restart_alt,
-                isDestructive: true,
-                isLoading: _isResetting,
-                onTap: () => _showResetConfirmation(context),
+              ListTile(
+                leading: const Icon(Icons.restart_alt, color: Colors.red),
+                title: const Text(
+                  'Réinitialiser la progression',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: _isResetting ? null : () => _showResetConfirmation(context),
+                trailing: _isResetting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
               ),
             ],
           );

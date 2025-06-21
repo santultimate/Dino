@@ -8,9 +8,7 @@ class ShopService extends ChangeNotifier {
   final List<ShopItem> _items = []; // Remplis avec tes objets
 
   List<ShopItem> getItemsByType(ShopItemType type) {
-  return _items.where((item) => item.type == type).toList(); // ✅ correct
-}
-
+    return _items.where((item) => item.type == type).toList();
   }
 
   bool isItemOwned(String id) {
@@ -23,6 +21,7 @@ class ShopService extends ChangeNotifier {
   }
 
   Future<PurchaseStatus> attemptPurchase(String id) async {
-    // Logique d’achat
+    // Logique d'achat
     return PurchaseStatus.success;
   }
+}
