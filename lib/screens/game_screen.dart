@@ -16,6 +16,7 @@ import '../widgets/background_parallax.dart';
 import '../models/game_state.dart';
 import '../models/game_mode.dart';
 import '../models/power_up_type.dart';
+import '../models/obstacle_type.dart';
 import '../utils/animations.dart';
 import '../models/sound_type.dart';
 
@@ -28,7 +29,7 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final GameService _gameService;
   late final SoundService _soundService;
   late final ScoreService _scoreService;
@@ -47,8 +48,8 @@ class _GameScreenState extends State<GameScreen>
 
   void _initializeServices() {
     _gameService = context.read<GameService>();
-    _soundService = context.read<SoundService>();
-    _scoreService = context.read<ScoreService>();
+    _soundService = Provider.of<SoundService>(context, listen: false);
+    // _scoreService = context.read<ScoreService>(); // Temporarily disabled
     _powerUpService = context.read<PowerUpService>();
   }
 
@@ -114,14 +115,15 @@ class _GameScreenState extends State<GameScreen>
     _shakeController.forward(from: 0);
     final score = _gameService.currentScore;
 
-    await _scoreService.saveScore(
-      mode: widget.mode,
-      score: score,
-      level: _gameService.level,
-    );
+    // Temporarily disabled ScoreService functionality
+    // await _scoreService.saveScore(
+    //   mode: widget.mode,
+    //   score: score,
+    //   level: _gameService.level,
+    // );
 
-    final highScore = await _scoreService.getBestScore(widget.mode);
-    final bestScore = await _scoreService.getGlobalHighScore();
+    // final highScore = await _scoreService.getBestScore(widget.mode);
+    // final bestScore = await _scoreService.getGlobalHighScore();
 
     if (!mounted) return;
 
@@ -130,23 +132,30 @@ class _GameScreenState extends State<GameScreen>
       barrierDismissible: false,
       builder: (_) => GameOverDialog(
         score: score,
-        highScore: highScore,
-        bestScore: bestScore,
+        highScore: 0, // Temporarily set to 0
+        bestScore: 0, // Temporarily set to 0
         mode: widget.mode.toString(),
         level: _gameService.level,
         powerUpsUsed: null,
         onReplay: _restartGame,
-        onMenu: () => Navigator.pop(context),
-        onSaveScore: (name) => _scoreService.saveScore(
-          mode: widget.mode,
-          score: score,
-          level: _gameService.level,
-        ),
+        onMenu: () {
+          Navigator.pop(context); // Close the dialog
+          Navigator.pop(context); // Go back to home screen
+        },
+        onSaveScore: (name) {
+          // Temporarily disabled
+          // _scoreService.saveScore(
+          //   mode: widget.mode,
+          //   score: score,
+          //   level: _gameService.level,
+          // );
+        },
       ),
     );
   }
 
   Future<void> _restartGame() async {
+    Navigator.pop(context); // Close the game over dialog
     await _gameService.reset();
     await _soundService.resumeBackgroundMusic();
     if (mounted) setState(() {});
@@ -241,8 +250,11 @@ class _GameScreenState extends State<GameScreen>
             isJumping: _gameService.isJumping,
             runVelocity: 1.0,
           ),
-          // Note: GameService doesn't expose obstacles or power-ups as lists
-          // These would need to be implemented separately
+          // Obstacle qui défile
+          ObstacleWidget(
+            positionX: _gameService.obstaclePosition * MediaQuery.of(context).size.width,
+            assetPath: _getObstacleAsset(_gameService.currentObstacle),
+          ),
         ],
       ),
     );
@@ -296,5 +308,18 @@ class _GameScreenState extends State<GameScreen>
         ),
       ),
     );
+  }
+
+  String _getObstacleAsset(ObstacleType obstacleType) {
+    switch (obstacleType) {
+      case ObstacleType.cactus:
+        return 'assets/images/cactus.png';
+      case ObstacleType.bird:
+        return 'assets/images/cactus.png'; // Using cactus for now, replace with bird.png when available
+      case ObstacleType.rock:
+        return 'assets/images/cactus.png'; // Using cactus for now, replace with rock.png when available
+      default:
+        return 'assets/images/cactus.png';
+    }
   }
 }

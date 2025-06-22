@@ -28,13 +28,17 @@ class SoundService with ChangeNotifier {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    await _audioCache.loadAll([
-      'background.mp3',
-      'jump.mp3',
-      'hit.mp3',
-      'coin.mp3',
-      'gameover.mp3',
-    ]);
+    try {
+      await _audioCache.loadAll([
+        'jump.mp3',
+        'hit.mp3',
+        'coin.mp3',
+        'gameover.mp3',
+        // Removed 'background.mp3' as it doesn't exist
+      ]);
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Some sound files could not be loaded: $e');
+    }
 
     _bgPlayer.onPlayerComplete.listen((_) {
       if (_isMusicOn) _bgPlayer.resume();
@@ -46,9 +50,15 @@ class SoundService with ChangeNotifier {
 
   Future<void> playBackgroundMusic() async {
     if (!_isInitialized || !_isMusicOn) return;
-    await _bgPlayer.setReleaseMode(ReleaseMode.loop);
-    await _bgPlayer.setVolume(_musicVolume);
-    await _bgPlayer.play(AssetSource('sounds/background.mp3'));
+    
+    try {
+      await _bgPlayer.setReleaseMode(ReleaseMode.loop);
+      await _bgPlayer.setVolume(_musicVolume);
+      // Temporarily disabled background music due to missing file
+      // await _bgPlayer.play(AssetSource('sounds/background.mp3'));
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Could not play background music: $e');
+    }
   }
 
   Future<void> stopBackgroundMusic() async {

@@ -20,6 +20,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _settingsService = context.read<SettingsService>();
+    _soundService = Provider.of<SoundService>(context, listen: false);
   }
 
   @override

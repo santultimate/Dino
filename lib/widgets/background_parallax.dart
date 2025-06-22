@@ -109,28 +109,42 @@ class _BackgroundParallaxState extends State<BackgroundParallax>
   Widget _buildParallaxLayer(ParallaxLayer layer) {
     final adjustedSpeed = widget.speed * layer.speedFactor;
     final xOffset = (_controller.value * adjustedSpeed) % 1.0;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Positioned.fill(
-      child: Transform.translate(
-        offset: Offset(-xOffset * layer.width, 0),
-        child: Row(
-          children: [
-            _buildLayerImage(layer),
-            _buildLayerImage(layer), // Seamless repeating
-          ],
+      child: ClipRect(
+        child: Transform.translate(
+          offset: Offset(-xOffset * screenWidth, 0),
+          child: SizedBox(
+            width: screenWidth * 2,
+            height: double.infinity,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Image.asset(
+                    layer.assetPath,
+                    width: screenWidth,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    color: layer.tint,
+                    colorBlendMode: layer.tint != null ? BlendMode.modulate : null,
+                  ),
+                ),
+                Expanded(
+                  child: Image.asset(
+                    layer.assetPath,
+                    width: screenWidth,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    color: layer.tint,
+                    colorBlendMode: layer.tint != null ? BlendMode.modulate : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLayerImage(ParallaxLayer layer) {
-    return Image.asset(
-      layer.assetPath,
-      width: layer.width,
-      height: double.infinity,
-      fit: BoxFit.fitHeight,
-      color: layer.tint,
-      colorBlendMode: layer.tint != null ? BlendMode.modulate : null,
     );
   }
 }

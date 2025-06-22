@@ -1,28 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+// import 'package:firebase_core/firebase_core.dart';
 
 import 'screens/game_screen.dart';
 import 'screens/leaderboard_screen.dart';
 import 'screens/shop_screen.dart';
+import 'screens/game_mode_service.dart';
 import 'models/game_mode.dart';
 import 'services/game_service.dart';
 import 'services/sound_service.dart';
 import 'services/score_service.dart';
 import 'services/settings_service.dart';
+import 'services/power_up_service.dart';
+import 'services/coin_service.dart';
+import 'services/achievements_service.dart';
+import 'services/firebase_service.dart';
 import 'widgets/mode_button.dart';
 import 'package:dino_game_v2/services/shop_service.dart' as shop_service;
 
-
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp();
   runApp(
     MultiProvider(
       providers: [
             ChangeNotifierProvider(create: (_) => GameService()),
             ChangeNotifierProvider(create: (_) => SettingsService()),
-            ChangeNotifierProvider(create: (_) => shop_service.ShopService()), // <- corrigé
-            Provider(create: (_) => SoundService()),
-            Provider(create: (_) => ScoreService()),
+            ChangeNotifierProvider(create: (_) => shop_service.ShopService()),
+            ChangeNotifierProvider(create: (_) => SoundService()),
+            // Provider(create: (_) => ScoreService()), // Temporarily disabled
+            ChangeNotifierProvider(create: (_) => PowerUpService()),
+            ChangeNotifierProvider(create: (_) => CoinService()),
+            // ChangeNotifierProvider(create: (_) => AchievementsService()), // Temporarily disabled
+            // Provider(create: (_) => FirebaseService()), // Temporarily disabled
+            ChangeNotifierProvider(create: (_) => GameModeService()),
       ],
       child: const MyApp(),
     ),
