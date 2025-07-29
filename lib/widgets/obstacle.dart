@@ -16,8 +16,8 @@ class ObstacleWidget extends StatelessWidget {
     required this.positionX,
     this.obstacleY = 0,
     this.assetPath = 'assets/images/cactus.png',
-    this.width = 40,
-    this.height = 60,
+    this.width = 60,
+    this.height = 90,
     this.isAnimated = false,
     this.animationValue = 0,
     this.onCollide,
@@ -26,24 +26,17 @@ class ObstacleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final baseY = screenHeight * 0.2;
-
-    return Positioned(
-      left: positionX,
-      bottom: baseY + obstacleY,
-      child: GestureDetector(
-        onTap: onCollide,
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: Stack(
-            children: [
-              _buildObstacleVisual(),
-              // Activez ceci pour debuguer les zones de collision
-              // _buildHitboxDebug(),
-            ],
-          ),
+    return GestureDetector(
+      onTap: onCollide,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          children: [
+            _buildObstacleVisual(),
+            // Activez ceci pour debuguer les zones de collision
+            // _buildHitboxDebug(),
+          ],
         ),
       ),
     );
@@ -51,9 +44,10 @@ class ObstacleWidget extends StatelessWidget {
 
   Widget _buildObstacleVisual() {
     return Transform(
-      transform: isAnimated
-          ? Matrix4.rotationZ(animationValue * 0.1)
-          : Matrix4.identity(),
+      transform:
+          isAnimated
+              ? Matrix4.rotationZ(animationValue * 0.1)
+              : Matrix4.identity(),
       alignment: Alignment.bottomCenter,
       child: Image.asset(
         assetPath,
@@ -94,6 +88,6 @@ class Hitbox {
   final double heightRatio;
 
   const Hitbox(this.widthRatio, this.heightRatio)
-      : assert(widthRatio > 0 && widthRatio <= 1),
-        assert(heightRatio > 0 && heightRatio <= 1);
+    : assert(widthRatio > 0 && widthRatio <= 1),
+      assert(heightRatio > 0 && heightRatio <= 1);
 }

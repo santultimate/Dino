@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../services/sound_service.dart';
+import '../services/ad_service.dart';
+import '../widgets/ad_banner.dart';
+import 'about_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -42,101 +45,152 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Consumer2<SettingsService, SoundService>(
-        builder: (context, settings, sound, child) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
+      body: Consumer3<SettingsService, SoundService, AdService>(
+        builder: (context, settings, sound, adService, child) {
+          return Column(
             children: [
-              _buildSectionHeader('Apparence'),
-              SwitchListTile(
-                title: const Text('Mode sombre'),
-                subtitle: const Text('Activer le thème sombre'),
-                value: settings.isDarkMode,
-                secondary: const Icon(Icons.dark_mode),
-                onChanged: _handleDarkModeChange,
-              ),
-              SwitchListTile(
-                title: const Text('Animations'),
-                subtitle: const Text('Activer les effets animés'),
-                value: settings.animationsEnabled,
-                secondary: const Icon(Icons.animation),
-                onChanged: settings.setAnimationsEnabled,
-              ),
-              const Divider(height: 32),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildSectionHeader('Apparence'),
+                    SwitchListTile(
+                      title: const Text('Mode sombre'),
+                      subtitle: const Text('Activer le thème sombre'),
+                      value: settings.isDarkMode,
+                      secondary: const Icon(Icons.dark_mode),
+                      onChanged: _handleDarkModeChange,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Animations'),
+                      subtitle: const Text('Activer les effets animés'),
+                      value: settings.animationsEnabled,
+                      secondary: const Icon(Icons.animation),
+                      onChanged: settings.setAnimationsEnabled,
+                    ),
+                    const Divider(height: 32),
 
-              _buildSectionHeader('Audio'),
-              SwitchListTile(
-                title: const Text('Musique'),
-                subtitle: const Text('Activer la musique de fond'),
-                value: sound.musicEnabled,
-                secondary: const Icon(Icons.music_note),
-                onChanged: sound.setMusicEnabled,
-              ),
-              SwitchListTile(
-                title: const Text('Effets sonores'),
-                subtitle: const Text('Activer les sons du jeu'),
-                value: sound.soundEffectsEnabled,
-                secondary: const Icon(Icons.volume_up),
-                onChanged: sound.setSoundEffectsEnabled,
-              ),
-              ListTile(
-                title: const Text('Volume musique'),
-                leading: const Icon(Icons.volume_down),
-                subtitle: Slider(
-                  value: sound.musicVolume,
-                  onChanged: sound.setMusicVolume,
-                  min: 0,
-                  max: 1,
-                  divisions: 10,
-                  label: (sound.musicVolume * 100).round().toString(),
-                ),
-              ),
-              ListTile(
-                title: const Text('Volume effets'),
-                leading: const Icon(Icons.volume_up),
-                subtitle: Slider(
-                  value: sound.soundEffectsVolume,
-                  onChanged: sound.setSoundEffectsVolume,
-                  min: 0,
-                  max: 1,
-                  divisions: 10,
-                  label: (sound.soundEffectsVolume * 100).round().toString(),
-                ),
-              ),
-              const Divider(height: 32),
+                    _buildSectionHeader('Audio'),
+                    SwitchListTile(
+                      title: const Text('Musique'),
+                      subtitle: const Text('Activer la musique de fond'),
+                      value: sound.musicEnabled,
+                      secondary: const Icon(Icons.music_note),
+                      onChanged: sound.setMusicEnabled,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Effets sonores'),
+                      subtitle: const Text('Activer les sons du jeu'),
+                      value: sound.soundEffectsEnabled,
+                      secondary: const Icon(Icons.volume_up),
+                      onChanged: sound.setSoundEffectsEnabled,
+                    ),
+                    ListTile(
+                      title: const Text('Volume musique'),
+                      leading: const Icon(Icons.volume_down),
+                      subtitle: Slider(
+                        value: sound.musicVolume,
+                        onChanged: sound.setMusicVolume,
+                        min: 0,
+                        max: 1,
+                        divisions: 10,
+                        label: (sound.musicVolume * 100).round().toString(),
+                      ),
+                    ),
+                    ListTile(
+                      title: const Text('Volume effets'),
+                      leading: const Icon(Icons.volume_up),
+                      subtitle: Slider(
+                        value: sound.soundEffectsVolume,
+                        onChanged: sound.setSoundEffectsVolume,
+                        min: 0,
+                        max: 1,
+                        divisions: 10,
+                        label:
+                            (sound.soundEffectsVolume * 100).round().toString(),
+                      ),
+                    ),
+                    const Divider(height: 32),
 
-              _buildSectionHeader('Jeu'),
-              ListTile(
-                leading: const Icon(Icons.speed),
-                title: const Text('Difficulté'),
-                trailing: DropdownButton<String>(
-                  value: settings.difficulty,
-                  items: const [
-                    DropdownMenuItem(value: 'easy', child: Text('Facile')),
-                    DropdownMenuItem(value: 'medium', child: Text('Moyen')),
-                    DropdownMenuItem(value: 'hard', child: Text('Difficile')),
+                    _buildSectionHeader('Jeu'),
+                    ListTile(
+                      leading: const Icon(Icons.speed),
+                      title: const Text('Difficulté'),
+                      trailing: DropdownButton<String>(
+                        value: settings.difficulty,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'easy',
+                            child: Text('Facile'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'medium',
+                            child: Text('Moyen'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'hard',
+                            child: Text('Difficile'),
+                          ),
+                        ],
+                        onChanged: (String? value) {
+                          if (value != null) {
+                            settings.setDifficulty(value);
+                          }
+                        },
+                      ),
+                    ),
+                    const Divider(height: 32),
+
+                    _buildSectionHeader('Informations'),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.info_outline,
+                        color: Colors.blue,
+                      ),
+                      title: const Text('À propos'),
+                      subtitle: const Text(
+                        'Informations sur le jeu et l\'équipe',
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AboutScreen(),
+                          ),
+                        );
+                      },
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.restart_alt, color: Colors.red),
+                      title: const Text(
+                        'Réinitialiser la progression',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      onTap:
+                          _isResetting
+                              ? null
+                              : () => _showResetConfirmation(context),
+                      trailing:
+                          _isResetting
+                              ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : null,
+                    ),
                   ],
-                  onChanged: (String? value) {
-                  if (value != null) {
-                      settings.setDifficulty(value);
-                    }
-                  },
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.restart_alt, color: Colors.red),
-                title: const Text(
-                  'Réinitialiser la progression',
-                  style: TextStyle(color: Colors.red),
-                ),
-                onTap: _isResetting ? null : () => _showResetConfirmation(context),
-                trailing: _isResetting
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : null,
+
+              // Bannière publicitaire en bas
+              AdBanner(
+                adService: adService,
+                height: 50,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ],
           );
@@ -150,9 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -163,32 +217,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la modification du thème')),
+          const SnackBar(
+            content: Text('Erreur lors de la modification du thème'),
+          ),
         );
       }
     }
   }
 
   Future<void> _showResetConfirmation(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Confirmer la réinitialisation'),
-            content: const Text('Voulez-vous vraiment réinitialiser toutes vos données de jeu ?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Annuler'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Réinitialiser',
-                  style: TextStyle(color: Colors.red),
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Confirmer la réinitialisation'),
+                content: const Text(
+                  'Voulez-vous vraiment réinitialiser toutes vos données de jeu ?',
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text(
+                      'Réinitialiser',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
         ) ??
         false;
 

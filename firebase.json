@@ -1,0 +1,7 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "project": "dino-game-7bdae"
+} 

@@ -51,13 +51,15 @@ class _GameOverDialogState extends State<GameOverDialog>
       duration: const Duration(milliseconds: 300),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _controller.forward();
   }
@@ -72,28 +74,28 @@ class _GameOverDialogState extends State<GameOverDialog>
   void _handleSaveScore() {
     if (_scoreSaved) return;
 
-    final name = _nameController.text.trim().isEmpty
-        ? "Anonyme"
-        : _nameController.text.trim();
+    final name =
+        _nameController.text.trim().isEmpty
+            ? "Anonyme"
+            : _nameController.text.trim();
 
     widget.onSaveScore(name);
     setState(() => _scoreSaved = true);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Score sauvegardé!'),
+        content: Text('Score sauvegardé avec le nom: $name'),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isNewHighScore = widget.highScore != null && widget.score > widget.highScore!;
+    final isNewHighScore =
+        widget.highScore != null && widget.score > widget.highScore!;
     final isNewBestScore = widget.score >= widget.bestScore;
 
     return ScaleTransition(
@@ -156,35 +158,48 @@ class _GameOverDialogState extends State<GameOverDialog>
                 if (isNewHighScore || isNewBestScore) ...[
                   const SizedBox(height: 8),
                   if (isNewHighScore)
-                    _buildRecordIndicator('NOUVEAU RECORD PERSO!', Colors.amber),
+                    _buildRecordIndicator(
+                      'NOUVEAU RECORD PERSO!',
+                      Colors.amber,
+                    ),
                   if (isNewBestScore)
-                    _buildRecordIndicator('NOUVEAU RECORD GLOBAL!', Colors.greenAccent),
+                    _buildRecordIndicator(
+                      'NOUVEAU RECORD GLOBAL!',
+                      Colors.greenAccent,
+                    ),
                 ],
-                if (widget.powerUpsUsed != null && widget.powerUpsUsed!.isNotEmpty) ...[
+                if (widget.powerUpsUsed != null &&
+                    widget.powerUpsUsed!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   const Text(
                     'Power-Ups Utilisés:',
-                    style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
-                    children: widget.powerUpsUsed!
-                        .map((powerUp) => Chip(
-                              label: Text(
-                                powerUp.displayName,
-                                style: const TextStyle(color: Colors.black),
+                    children:
+                        widget.powerUpsUsed!
+                            .map(
+                              (powerUp) => Chip(
+                                label: Text(
+                                  powerUp.displayName,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                                avatar: Image.asset(
+                                  powerUp.iconPath,
+                                  width: 20,
+                                  height: 20,
+                                  fit: BoxFit.contain,
+                                ),
+                                backgroundColor: Colors.greenAccent,
                               ),
-                              avatar: Image.asset(
-                                powerUp.iconPath,
-                                width: 20,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                              backgroundColor: Colors.greenAccent,
-                            ))
-                        .toList(),
+                            )
+                            .toList(),
                   ),
                 ],
                 if (widget.showNameInput && !_scoreSaved) ...[
@@ -226,17 +241,43 @@ class _GameOverDialogState extends State<GameOverDialog>
                 if (_scoreSaved)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Column(
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.greenAccent),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Score enregistré',
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.greenAccent,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Score enregistré avec: ${_nameController.text.trim().isEmpty ? "Anonyme" : _nameController.text.trim()}',
+                              style: const TextStyle(
+                                color: Colors.greenAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.access_time,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Enregistré le ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} à ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

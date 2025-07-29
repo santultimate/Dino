@@ -43,3 +43,56 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive files - DO NOT COMMIT THESE
+# Firebase configuration files
+google-services.json
+GoogleService-Info.plist
+firebase_app_id_file.json
+
+# API Keys and secrets
+*.env
+.env
+.env.local
+.env.production
+.env.development
+
+# Keystore files
+*.keystore
+*.jks
+key.properties
+
+# AdMob configuration
+admob_config.json
+admob_keys.json
+
+# Payment and banking information
+payment_config.json
+stripe_keys.json
+paypal_config.json
+
+# Debug and crash reports
+crashlytics.properties
+fabric.properties
+
+# Local configuration files
+config.json
+secrets.json
+keys.json
+
+# iOS specific sensitive files
+ios/Runner/GoogleService-Info.plist
+ios/Runner/Info.plist.bak
+
+# Android specific sensitive files
+android/app/google-services.json
+android/app/src/main/assets/google-services.json
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# IDE specific files
+.vscode/settings.json
+.idea/workspace.xml

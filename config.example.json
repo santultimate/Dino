@@ -1,0 +1,15 @@
+{
+  "firebase": {
+    "project_id": "your-project-id",
+    "api_key": "your-api-key-here",
+    "app_id": "your-app-id-here"
+  },
+  "admob": {
+    "app_id": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy",
+    "banner_ad_unit_id": "ca-app-pub-xxxxxxxxxxxxxxxx/zzzzzzzzzz",
+    "interstitial_ad_unit_id": "ca-app-pub-xxxxxxxxxxxxxxxx/wwwwwwwwww"
+  },
+  "analytics": {
+    "tracking_id": "UA-XXXXXXXXX-X"
+  }
+} 

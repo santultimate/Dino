@@ -1,11 +1,11 @@
 // models/power_up_type.dart
 
 enum PowerUpType {
-  healthBoost('Boost de Santé', 'health_boost', 'assets/powerups/health.png'),
-  speedBoost('Boost de Vitesse', 'speed_boost', 'assets/powerups/speed.png'),
-  damageBoost('Boost de Dégâts', 'damage_boost', 'assets/powerups/damage.png'),
-  shield('Bouclier', 'shield', 'assets/powerups/shield.png'),
-  doubleCoins('Double Pièces', 'double_coins', 'assets/powerups/coins.png');
+  healthBoost('Boost de Santé', 'health_boost', 'assets/images/power_up.png'),
+  speedBoost('Boost de Vitesse', 'speed_boost', 'assets/images/power_up.png'),
+  damageBoost('Boost de Dégâts', 'damage_boost', 'assets/images/power_up.png'),
+  shield('Bouclier', 'shield', 'assets/images/power_up.png'),
+  doubleCoins('Double Pièces', 'double_coins', 'assets/images/power_up.png');
 
   final String displayName;
   final String id;

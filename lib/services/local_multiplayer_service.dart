@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 enum MultiplayerMode { localSplitScreen, networkLAN }
+
 enum ConnectionState { disconnected, hosting, connecting, connected }
 
 class LocalMultiplayerService with ChangeNotifier {
@@ -53,14 +54,15 @@ class LocalMultiplayerService with ChangeNotifier {
 
     try {
       _changeState(ConnectionState.hosting);
-      _server = await ServerSocket.bind(InternetAddress.anyIPv4, _port)
-          .timeout(connectionTimeout);
+      _server = await ServerSocket.bind(
+        InternetAddress.anyIPv4,
+        _port,
+      ).timeout(connectionTimeout);
 
-      _server!.listen(_handleNewConnection)
-          .onError((error, stackTrace) {
-            _handleError('Erreur serveur: $error');
-            return null;
-          });
+      _server!.listen(_handleNewConnection).onError((error, stackTrace) {
+        _handleError('Erreur serveur: $error');
+        return null;
+      });
 
       debugPrint('🎮 Serveur hébergé sur $_localIP:$_port');
       return true;
@@ -78,8 +80,7 @@ class LocalMultiplayerService with ChangeNotifier {
       _changeState(ConnectionState.connecting);
       _port = port ?? defaultPort;
 
-      _client = await Socket.connect(hostIP, _port)
-          .timeout(connectionTimeout);
+      _client = await Socket.connect(hostIP, _port).timeout(connectionTimeout);
 
       _setupClientListeners();
       _changeState(ConnectionState.connected);
@@ -139,7 +140,7 @@ class LocalMultiplayerService with ChangeNotifier {
   /// Envoie un message au joueur connecté
   void sendMessage(String type, [String data = '']) {
     final message = '$type:$data';
-    
+
     if (_client == null) {
       _pendingMessages.add(message);
       debugPrint('⏳ Message en attente: $message');
@@ -173,8 +174,8 @@ class LocalMultiplayerService with ChangeNotifier {
   /// Planifie une reconnexion automatique
   void _scheduleReconnect() {
     if (_reconnectTimer != null) return;
-    
-    _reconnectTimer = Timer.periodic(Duration(seconds: 3), (_) {
+
+    _reconnectTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (_state == ConnectionState.disconnected && _client != null) {
         debugPrint('🔁 Tentative de reconnexion...');
         joinGame(_client!.remoteAddress.address);
@@ -201,7 +202,7 @@ class LocalMultiplayerService with ChangeNotifier {
   /// Déconnecte proprement
   Future<void> disconnect() async {
     sendMessage('system', 'disconnect');
-    await Future.delayed(Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 100));
     _cleanUp();
     _changeState(ConnectionState.disconnected);
   }

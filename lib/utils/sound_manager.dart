@@ -19,52 +19,72 @@ class SoundManager {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    await _audioCache.loadAll([
-      'background_music.mp3',
-      'jump.wav',
-      'hit.wav',
-      'score.wav',
-      'coin.mp3',
-      'gameover.mp3',
-    ]);
+    try {
+      await _audioCache.loadAll([
+        'background.mp3',
+        'jump.mp3',
+        'hit.mp3',
+        'coin.mp3',
+        'gameover.mp3',
+      ]);
 
-    _backgroundPlayer.onPlayerComplete.listen((_) {
-      if (isMusicOn) _backgroundPlayer.resume();
-    });
+      // Configuration de la musique de fond en loop
+      await _backgroundPlayer.setReleaseMode(ReleaseMode.loop);
+      await _backgroundPlayer.setVolume(musicVolume);
 
-    _isInitialized = true;
-
-    if (kDebugMode) print('✅ SoundManager initialized');
+      _isInitialized = true;
+      if (kDebugMode) print('✅ SoundManager initialized');
+    } catch (e) {
+      if (kDebugMode) print('❌ Error initializing SoundManager: $e');
+    }
   }
 
   Future<void> playBackgroundMusic() async {
     if (!isMusicOn || !_isInitialized) return;
     try {
-      await _backgroundPlayer.setReleaseMode(ReleaseMode.loop);
-      await _backgroundPlayer.setVolume(musicVolume);
-      await _backgroundPlayer.play(AssetSource('sounds/background_music.mp3'));
+      await _backgroundPlayer.play(AssetSource('sounds/background.mp3'));
+      if (kDebugMode) print('🎵 Background music started');
     } catch (e) {
-      if (kDebugMode) print('❌ Error playing music: $e');
+      if (kDebugMode) print('❌ Error playing background music: $e');
     }
   }
 
   Future<void> pauseBackgroundMusic() async {
-    await _backgroundPlayer.pause();
+    try {
+      await _backgroundPlayer.pause();
+      if (kDebugMode) print('⏸️ Background music paused');
+    } catch (e) {
+      if (kDebugMode) print('❌ Error pausing background music: $e');
+    }
   }
 
   Future<void> resumeBackgroundMusic() async {
     if (isMusicOn && _isInitialized) {
-      await _backgroundPlayer.resume();
+      try {
+        await _backgroundPlayer.resume();
+        if (kDebugMode) print('▶️ Background music resumed');
+      } catch (e) {
+        if (kDebugMode) print('❌ Error resuming background music: $e');
+      }
     }
   }
 
   Future<void> stopBackgroundMusic() async {
-    await _backgroundPlayer.stop();
+    try {
+      await _backgroundPlayer.stop();
+      if (kDebugMode) print('⏹️ Background music stopped');
+    } catch (e) {
+      if (kDebugMode) print('❌ Error stopping background music: $e');
+    }
   }
 
   Future<void> setMusicVolume(double volume) async {
     musicVolume = volume.clamp(0.0, 1.0);
-    await _backgroundPlayer.setVolume(musicVolume);
+    try {
+      await _backgroundPlayer.setVolume(musicVolume);
+    } catch (e) {
+      if (kDebugMode) print('❌ Error setting music volume: $e');
+    }
   }
 
   void setEffectsVolume(double volume) {
@@ -88,6 +108,7 @@ class SoundManager {
     if (!areEffectsOn || !_isInitialized) return;
 
     try {
+      // Arrêter l'effet précédent s'il existe
       _effectPlayers[fileName]?.stop();
 
       final player = AudioPlayer();
@@ -106,11 +127,11 @@ class SoundManager {
   }
 
   Future<void> playJumpSound() async {
-    await playEffect('jump.wav');
+    await playEffect('jump.mp3');
   }
 
   Future<void> playCrashSound() async {
-    await playEffect('hit.wav');
+    await playEffect('hit.mp3');
   }
 
   Future<void> playGameOverSound() async {
@@ -118,19 +139,28 @@ class SoundManager {
   }
 
   Future<void> playScoreSound() async {
-    await playEffect('score.wav');
+    await playEffect('coin.mp3');
   }
 
   Future<void> playCoinSound() async {
     await playEffect('coin.mp3');
   }
 
+  Future<void> playHitSound() async {
+    await playEffect('hit.mp3');
+  }
+
   Future<void> dispose() async {
-    await _backgroundPlayer.dispose();
-    for (var player in _effectPlayers.values) {
-      await player.dispose();
+    try {
+      await _backgroundPlayer.dispose();
+      for (var player in _effectPlayers.values) {
+        await player.dispose();
+      }
+      _effectPlayers.clear();
+      _isInitialized = false;
+      if (kDebugMode) print('🔇 SoundManager disposed');
+    } catch (e) {
+      if (kDebugMode) print('❌ Error disposing SoundManager: $e');
     }
-    _effectPlayers.clear();
-    _isInitialized = false;
   }
 }

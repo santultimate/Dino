@@ -13,18 +13,27 @@ class ScrollingBackground extends StatelessWidget {
   final Alignment alignment;
   final bool isHorizontal;
   final FilterQuality filterQuality;
+  final bool isNightMode;
 
   const ScrollingBackground({
     super.key,
     required this.scrollFactor,
-    this.assetPaths = const ['assets/images/background.png'],
-    this.layerSpeeds = const [1.0],
+    this.assetPaths = const [
+      'assets/background/layer_1.png',
+      'assets/background/layer_2.png',
+      'assets/background/layer_3.png',
+      'assets/background/layer_4.png',
+    ],
+    this.layerSpeeds = const [0.2, 0.4, 0.6, 0.8],
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
     this.isHorizontal = true,
     this.filterQuality = FilterQuality.low,
-  }) : assert(assetPaths.length == layerSpeeds.length, 
-           'Chaque calque doit avoir une vitesse définie');
+    this.isNightMode = false,
+  }) : assert(
+         assetPaths.length == layerSpeeds.length,
+         'Chaque calque doit avoir une vitesse définie',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -32,16 +41,30 @@ class ScrollingBackground extends StatelessWidget {
     final screenSize = media.size;
     final devicePixelRatio = media.devicePixelRatio;
 
-    return Stack(
-      children: [
-        for (int i = 0; i < assetPaths.length; i++)
-          _buildScrollingLayer(
-            assetPath: assetPaths[i],
-            speed: layerSpeeds[i],
-            screenSize: screenSize,
-            devicePixelRatio: devicePixelRatio,
-          ),
-      ],
+    return Container(
+      width: screenSize.width,
+      height: screenSize.height,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors:
+              isNightMode
+                  ? [Colors.indigo[900]!, Colors.black]
+                  : [Colors.lightBlue[300]!, Colors.lightBlue[100]!],
+        ),
+      ),
+      child: Stack(
+        children: [
+          for (int i = 0; i < assetPaths.length; i++)
+            _buildScrollingLayer(
+              assetPath: assetPaths[i],
+              speed: layerSpeeds[i],
+              screenSize: screenSize,
+              devicePixelRatio: devicePixelRatio,
+            ),
+        ],
+      ),
     );
   }
 
@@ -82,6 +105,8 @@ class ScrollingBackground extends StatelessWidget {
       repeat: ImageRepeat.noRepeat,
       cacheWidth: (screenSize.width * (isHorizontal ? 2 : 1)).toInt(),
       cacheHeight: (screenSize.height * (isHorizontal ? 1 : 2)).toInt(),
+      color: isNightMode ? Colors.indigo[800] : null,
+      colorBlendMode: isNightMode ? BlendMode.multiply : null,
     );
   }
 }

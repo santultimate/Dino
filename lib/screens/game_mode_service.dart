@@ -3,15 +3,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_mode.dart';
 import '../screens/game_modes/infinite_mode.dart' as infinite;
 import '../screens/game_modes/timed_mode.dart' as timed;
+import '../screens/game_modes/daily_challenge_mode.dart' as daily_challenge;
 import '../screens/game_modes/hardcore_mode.dart' as hardcore;
 
 class GameModeService with ChangeNotifier {
-  GameMode _currentMode = GameMode.infinite;
+  GameMode _selectedMode = GameMode.infinite;
   final Map<GameMode, int> _highScores = {};
   bool _isInitialized = false;
 
-  GameMode get currentMode => _currentMode;
-  int get currentHighScore => _highScores[_currentMode] ?? 0;
+  GameMode get selectedMode => _selectedMode;
+  int get currentHighScore => _highScores[_selectedMode] ?? 0;
   Map<GameMode, int> get allHighScores => Map.unmodifiable(_highScores);
 
   Future<void> initialize() async {
@@ -35,44 +36,43 @@ class GameModeService with ChangeNotifier {
     notifyListeners();
   }
 
-  void setCurrentMode(GameMode mode) {
-    if (_currentMode == mode) return;
-    _currentMode = mode;
+  void selectMode(GameMode mode) {
+    _selectedMode = mode;
     notifyListeners();
   }
 
   void updateHighScore(int score) {
     if (score > currentHighScore) {
-      _saveHighScore(_currentMode, score);
+      _saveHighScore(_selectedMode, score);
     }
   }
 
-  Widget getModeScreen() {
-    switch (_currentMode) {
+  Widget getCurrentGameScreen() {
+    switch (_selectedMode) {
       case GameMode.infinite:
         return const infinite.InfiniteMode();
       case GameMode.timeAttack:
-        return timed.GameScreen(mode: timed.GameMode.timeAttack);
+        return const timed.GameScreen(mode: GameMode.timeAttack);
       case GameMode.challenge:
-        return timed.GameScreen(mode: timed.GameMode.dailyChallenge);
+        return const daily_challenge.DailyChallengeMode();
       case GameMode.hardcore:
         return const hardcore.HardcoreMode();
     }
-    throw UnimplementedError('Unknown game mode: \\_currentMode');
+    throw UnimplementedError('Unknown game mode: $_selectedMode');
   }
 
   String getModeDescription(GameMode mode) {
     switch (mode) {
       case GameMode.infinite:
-        return 'Course sans limite de temps\nRecord: \\${_highScores[GameMode.infinite] ?? 0}';
+        return 'Course sans limite de temps\nRecord: ${_highScores[GameMode.infinite] ?? 0}';
       case GameMode.timeAttack:
-        return '60 secondes pour marquer un max de points\nRecord: \\${_highScores[GameMode.timeAttack] ?? 0}';
+        return '60 secondes pour marquer un max de points\nRecord: ${_highScores[GameMode.timeAttack] ?? 0}';
       case GameMode.challenge:
-        return 'Défi unique chaque jour\nRecord: \\${_highScores[GameMode.challenge] ?? 0}';
+        return 'Défi unique chaque jour\nRecord: ${_highScores[GameMode.challenge] ?? 0}';
       case GameMode.hardcore:
-        return 'Difficulté maximale, un seul essai\nRecord: \\${_highScores[GameMode.hardcore] ?? 0}';
+        return 'Difficulté maximale, un seul essai\nRecord: ${_highScores[GameMode.hardcore] ?? 0}';
     }
-    throw UnimplementedError('Unknown game mode: \\mode');
+    throw UnimplementedError('Unknown game mode: $mode');
   }
 
   IconData getModeIcon(GameMode mode) {
@@ -86,7 +86,7 @@ class GameModeService with ChangeNotifier {
       case GameMode.hardcore:
         return Icons.whatshot;
     }
-    throw UnimplementedError('Unknown game mode: \\mode');
+    throw UnimplementedError('Unknown game mode: $mode');
   }
 
   Color getModeColor(GameMode mode) {
@@ -100,6 +100,6 @@ class GameModeService with ChangeNotifier {
       case GameMode.hardcore:
         return Colors.red;
     }
-    throw UnimplementedError('Unknown game mode: \\mode');
+    throw UnimplementedError('Unknown game mode: $mode');
   }
 }

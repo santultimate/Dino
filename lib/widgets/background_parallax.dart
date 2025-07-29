@@ -1,167 +1,41 @@
 import 'package:flutter/material.dart';
 
-class BackgroundParallax extends StatefulWidget {
-  final double speed;
-  final bool isDarkMode;
-  
+class BackgroundParallax extends StatelessWidget {
+  final bool isNightMode;
+  final String? customBackground;
+
   const BackgroundParallax({
     super.key,
-    required this.speed,
-    this.isDarkMode = false,
+    this.isNightMode = false,
+    this.customBackground,
   });
 
   @override
-  State<BackgroundParallax> createState() => _BackgroundParallaxState();
-}
-
-class _BackgroundParallaxState extends State<BackgroundParallax> 
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late List<ParallaxLayer> _layers;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeLayers();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(days: 1), // Infinite animation
-    )..repeat();
-  }
-
-  void _initializeLayers() {
-    _layers = [
-      // Far mountains (moves slowest)
-      ParallaxLayer(
-        assetPath: 'assets/background/layer_1.png',
-        speedFactor: 0.2,
-        tint: widget.isDarkMode ? Colors.blueGrey[800] : null,
-      ),
-      // Mid-ground hills
-      ParallaxLayer(
-        assetPath: 'assets/background/layer_2.png',
-        speedFactor: 0.4,
-        tint: widget.isDarkMode ? Colors.blueGrey[700] : null,
-      ),
-      // Close hills
-      ParallaxLayer(
-        assetPath: 'assets/background/layer_3.png',
-        speedFactor: 0.6,
-        tint: widget.isDarkMode ? Colors.blueGrey[600] : null,
-      ),
-      // Ground (moves fastest)
-      ParallaxLayer(
-        assetPath: 'assets/background/layer_4.png',
-        speedFactor: 1.0,
-        tint: widget.isDarkMode ? Colors.blueGrey[900] : null,
-      ),
-    ];
-  }
-
-  @override
-  void didUpdateWidget(BackgroundParallax oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isDarkMode != widget.isDarkMode) {
-      _initializeLayers();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            // Sky background (non-moving)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: widget.isDarkMode
-                      ? [
-                          Colors.blueGrey[900]!,
-                          Colors.blueGrey[800]!,
-                        ]
-                      : [
-                          const Color(0xFF87CEEB),
-                          const Color(0xFFE0F7FA),
-                        ],
-                ),
-              ),
-            ),
-            // Parallax layers
-            ..._layers.map((layer) => _buildParallaxLayer(layer)),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildParallaxLayer(ParallaxLayer layer) {
-    final adjustedSpeed = widget.speed * layer.speedFactor;
-    final xOffset = (_controller.value * adjustedSpeed) % 1.0;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Positioned.fill(
-      child: ClipRect(
-        child: Transform.translate(
-          offset: Offset(-xOffset * screenWidth, 0),
-          child: SizedBox(
-            width: screenWidth * 2,
-            height: double.infinity,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Image.asset(
-                    layer.assetPath,
-                    width: screenWidth,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    color: layer.tint,
-                    colorBlendMode: layer.tint != null ? BlendMode.modulate : null,
-                  ),
-                ),
-                Expanded(
-                  child: Image.asset(
-                    layer.assetPath,
-                    width: screenWidth,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    color: layer.tint,
-                    colorBlendMode: layer.tint != null ? BlendMode.modulate : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors:
+              isNightMode
+                  ? [Colors.indigo[900]!, Colors.black]
+                  : [Colors.lightBlue[300]!, Colors.lightBlue[100]!],
         ),
       ),
+      child:
+          customBackground != null
+              ? Image.asset(
+                customBackground!,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                color: isNightMode ? Colors.indigo[800] : null,
+                colorBlendMode: isNightMode ? BlendMode.multiply : null,
+              )
+              : null,
     );
-  }
-}
-
-class ParallaxLayer {
-  final String assetPath;
-  final double speedFactor;
-  final Color? tint;
-  late final double width;
-
-  ParallaxLayer({
-    required this.assetPath,
-    required this.speedFactor,
-    this.tint,
-  }) {
-    // Assume all background layers are 1920px wide (standard HD width)
-    // This will be scaled appropriately by Flutter
-    width = 1920;
   }
 }

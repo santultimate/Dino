@@ -6,9 +6,11 @@ import '../models/obstacle_type.dart';
 
 class GameService with ChangeNotifier {
   GameState _state = GameState.ready;
-  double _dinoPosition = 1.0;
+  double _dinoPosition =
+      0.0; // 0.0 = ground, positive values = height above ground
   double _obstaclePosition = 1.0;
   bool _isJumping = false;
+  bool _isHit = false; // Nouvelle propriété pour l'état de collision
   int _score = 0;
   int _level = 1;
   double _speed = 0.02;
@@ -26,6 +28,7 @@ class GameService with ChangeNotifier {
   double get dinoPosition => _dinoPosition;
   double get obstaclePosition => _obstaclePosition;
   bool get isJumping => _isJumping;
+  bool get isHit => _isHit; // Nouveau getter
   int get currentScore => _score;
   int get level => _level;
   int get remainingTime => _remainingTime;
@@ -40,14 +43,14 @@ class GameService with ChangeNotifier {
 
   void start() {
     if (_state != GameState.ready) return;
-    
+
     _state = GameState.playing;
     _startGameLoop();
-    
+
     if (_currentMode == GameMode.timeAttack) {
       _startCountdown();
     }
-    
+
     notifyListeners();
   }
 
@@ -57,8 +60,8 @@ class GameService with ChangeNotifier {
 
     _isJumping = true;
     double time = 0;
-    const double jumpForce = 10.0; // Adjusted from 12.0 to 10.0 for more controlled jump
-    const double gravity = 12.0; // Adjusted from 15.0 to 12.0 for smoother fall
+    const double jumpForce = 8.5; // Higher jump
+    const double gravity = 22.0; // Keep fast fall
     final double initialHeight = _dinoPosition;
 
     _jumpTimer?.cancel();
@@ -69,13 +72,15 @@ class GameService with ChangeNotifier {
         _isJumping = false;
         return;
       }
-      
-      time += 0.016;
-      final height = -0.5 * gravity * time * time + jumpForce * time;
-      _dinoPosition = initialHeight - height / 2.8; // Adjusted from /3.0 to /2.8 for better height
 
-      if (_dinoPosition >= 1.0) {
-        _dinoPosition = 1.0;
+      time += 0.016;
+      // Physics formula: h = v0*t - 0.5*g*t^2
+      final height = jumpForce * time - 0.5 * gravity * time * time;
+      _dinoPosition = initialHeight + height;
+
+      // Check if dino has landed
+      if (_dinoPosition <= 0.0) {
+        _dinoPosition = 0.0;
         _isJumping = false;
         timer.cancel();
       }
@@ -107,7 +112,7 @@ class GameService with ChangeNotifier {
       }
 
       _obstaclePosition -= _speed;
-      
+
       // Check collision and stop immediately if collision occurs
       if (_checkCollision()) {
         timer.cancel(); // Stop the timer immediately
@@ -115,7 +120,8 @@ class GameService with ChangeNotifier {
         return;
       }
 
-      if (_obstaclePosition < -0.3) { // Spawn new obstacle when current one is off-screen left
+      if (_obstaclePosition < -0.3) {
+        // Spawn new obstacle when current one is off-screen left
         _spawnNewObstacle();
       }
 
@@ -132,25 +138,32 @@ class GameService with ChangeNotifier {
       }
 
       _remainingTime--;
-      
+
       if (_remainingTime <= 0) {
         _endGame();
       }
-      
+
       notifyListeners();
     });
   }
 
   bool _checkCollision() {
-    // Simplified and more accurate collision detection
+    // Improved collision detection with proper hitboxes
     final obstacleX = _obstaclePosition;
-    final dinoX = 0.2; // Dino's X position (left side of screen)
+    const dinoX = 0.2; // Dino's X position (left side of screen)
     final dinoY = _dinoPosition;
-    
+
+    // Define hitbox dimensions
+    const dinoWidth = 0.15;
+    const dinoHeight = 0.2;
+    const obstacleWidth = 0.1;
+    const obstacleHeight = 0.3;
+
     // Check if obstacle is close to dino horizontally
-    if (obstacleX > dinoX - 0.1 && obstacleX < dinoX + 0.2) {
-      // Only trigger collision if dino is at ground level (not jumping)
-      if (dinoY >= 0.98) { // Dino is at ground level (1.0 is ground)
+    if (obstacleX > dinoX - obstacleWidth && obstacleX < dinoX + dinoWidth) {
+      // Check vertical collision - dino must be at ground level to collide
+      if (dinoY < obstacleHeight) {
+        // Dino is low enough to hit the obstacle
         return true;
       }
     }
@@ -164,7 +177,7 @@ class GameService with ChangeNotifier {
 
     if (_score % 5 == 0) {
       _level++;
-      _speed += 0.0003; // Reduced from 0.0005 to 0.0003 for smoother progression
+      _speed += 0.0005; // Slower progression
     }
   }
 
@@ -194,14 +207,15 @@ class GameService with ChangeNotifier {
 
   void _resetGame() {
     _pauseGame();
-    
+
     _state = GameState.ready;
-    _dinoPosition = 1.0;
+    _dinoPosition = 0.0;
     _obstaclePosition = 1.2; // Start obstacle off-screen to the right
     _isJumping = false;
+    _isHit = false; // Réinitialiser l'état de collision
     _score = 0;
     _level = 1;
-    _speed = 0.006; // Reduced from 0.008 to 0.006 for better balance with new jump
+    _speed = 0.012; // Slower initial speed
     _remainingTime = 60;
     _currentObstacle = ObstacleType.cactus;
     _isGameOverHandled = false; // Reset the game over flag
@@ -211,15 +225,18 @@ class GameService with ChangeNotifier {
     // Prevent multiple game over events
     if (_isGameOverHandled) return;
     _isGameOverHandled = true;
-    
+
+    // Activer l'état de collision
+    _isHit = true;
+
     // Immediately stop all timers to prevent multiple game over events
     _jumpTimer?.cancel();
     _gameTimer?.cancel();
     _countdownTimer?.cancel();
-    
+
     // Set state to game over
     _state = GameState.gameOver;
-    
+
     // Remove auto-restart - game stops completely
     // Timer(const Duration(seconds: 2), () {
     //   if (_state == GameState.gameOver) {
@@ -228,7 +245,7 @@ class GameService with ChangeNotifier {
     //     start();
     //   }
     // });
-    
+
     notifyListeners();
   }
 

@@ -1,14 +1,16 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/dino.dart';
 import '../../widgets/obstacle.dart';
 import '../../widgets/power_up.dart';
-import '../../widgets/scrolling_background.dart';
 import '../../widgets/game_over_dialog.dart';
-import '../../utils/game_utils.dart';
-import '../../utils/sound_manager.dart';
+import '../../widgets/background_parallax.dart';
+import '../../widgets/cloud.dart';
 import '../../models/power_up_type.dart';
+import '../../utils/game_constants.dart';
+import '../../utils/sound_manager.dart';
 
 class InfiniteMode extends StatefulWidget {
   const InfiniteMode({super.key});
@@ -17,7 +19,7 @@ class InfiniteMode extends StatefulWidget {
   State<InfiniteMode> createState() => _InfiniteModeState();
 }
 
-class _InfiniteModeState extends State<InfiniteMode> 
+class _InfiniteModeState extends State<InfiniteMode>
     with SingleTickerProviderStateMixin {
   // Game State
   double dinoY = 0;
@@ -25,9 +27,21 @@ class _InfiniteModeState extends State<InfiniteMode>
   bool isGameStarted = false;
   bool isJumping = false;
   bool isGameOver = false;
+  bool isHit = false;
   int score = 0;
   int highScore = 0;
-  double backgroundOffset = 0;
+  int level = 1;
+  double currentSpeed = GameConstants.initialSpeed;
+  bool isNightMode = false;
+  int dayNightCycle = 0;
+
+  // Power-up system
+  bool hasShield = false;
+  bool hasSpeedBoost = false;
+  bool hasInvincibility = false;
+  Timer? shieldTimer;
+  Timer? speedBoostTimer;
+  Timer? invincibilityTimer;
 
   // Game Objects (store positions)
   final List<double> obstacleXs = [];
@@ -35,14 +49,12 @@ class _InfiniteModeState extends State<InfiniteMode>
   final List<PowerUpType> powerUpTypes = [];
   Timer? gameLoopTimer;
   late AnimationController _animationController;
+  final Random _random = Random();
 
   // Constants
-  static const double gravity = -9.8; // More realistic gravity
-  static const double jumpForce = 4.0; // Adjusted jump force
+  static const double gravity = -9.8;
+  static const double jumpForce = 4.0;
   static const double groundLevel = 0;
-  static const double gameSpeed = 0.005;
-  static const int obstacleInterval = 100;
-  static const int powerUpInterval = 300;
 
   @override
   void initState() {
@@ -70,13 +82,18 @@ class _InfiniteModeState extends State<InfiniteMode>
     setState(() {
       isGameStarted = true;
       isGameOver = false;
+      isHit = false;
       score = 0;
+      level = 1;
       dinoY = groundLevel;
       velocity = 0;
-      backgroundOffset = 0;
+      currentSpeed = GameConstants.initialSpeed;
+      isNightMode = false;
+      dayNightCycle = 0;
       obstacleXs.clear();
       powerUpXs.clear();
       powerUpTypes.clear();
+      _clearPowerUps();
     });
     SoundManager().playBackgroundMusic();
     _startGameLoop();
@@ -94,16 +111,17 @@ class _InfiniteModeState extends State<InfiniteMode>
     if (!mounted || isGameOver) return;
     setState(() {
       _updatePhysics();
-      _updateBackground();
       _updateObjects();
       _checkCollisions();
       _updateScore();
       _spawnObjects();
+      _updateDayNightCycle();
+      _updateProgressiveSpeed();
     });
   }
 
   void _updatePhysics() {
-    velocity += gravity * 0.016; // Frame-time adjusted
+    velocity += gravity * 0.016;
     dinoY -= velocity * 0.016;
     // Ground collision
     if (dinoY > groundLevel) {
@@ -113,17 +131,12 @@ class _InfiniteModeState extends State<InfiniteMode>
     }
   }
 
-  void _updateBackground() {
-    backgroundOffset -= gameSpeed;
-    if (backgroundOffset <= -1) backgroundOffset += 1;
-  }
-
   void _updateObjects() {
     for (int i = 0; i < obstacleXs.length; i++) {
-      obstacleXs[i] -= gameSpeed * 2;
+      obstacleXs[i] -= currentSpeed * 2.0;
     }
     for (int i = 0; i < powerUpXs.length; i++) {
-      powerUpXs[i] -= gameSpeed * 2;
+      powerUpXs[i] -= currentSpeed * 2.0;
     }
     // Remove off-screen objects
     obstacleXs.removeWhere((x) => x < -1.2);
@@ -136,13 +149,23 @@ class _InfiniteModeState extends State<InfiniteMode>
   }
 
   void _checkCollisions() {
-    // Simple collision check: if obstacle is close to dino
-    for (final x in obstacleXs) {
-      if (x < 0.2 && x > -0.2 && dinoY == groundLevel) {
-        _endGame();
-        return;
+    // Check obstacle collisions (with invincibility check)
+    if (!hasInvincibility) {
+      for (final x in obstacleXs) {
+        if (x < 0.2 && x > -0.2 && dinoY == groundLevel) {
+          if (hasShield) {
+            _removeShield();
+            obstacleXs.remove(x);
+            SoundManager().playHitSound();
+            return;
+          } else {
+            _endGame();
+            return;
+          }
+        }
       }
     }
+
     // Power-up collision
     for (int i = 0; i < powerUpXs.length; i++) {
       if (powerUpXs[i] < 0.2 && powerUpXs[i] > -0.2 && dinoY == groundLevel) {
@@ -155,8 +178,63 @@ class _InfiniteModeState extends State<InfiniteMode>
   }
 
   void _applyPowerUp(PowerUpType type) {
-    SoundManager().playCoinSound(); // Use coin sound for now
-    // Implement power-up effects here
+    SoundManager().playCoinSound();
+
+    switch (type) {
+      case PowerUpType.shield:
+        _activateShield();
+        break;
+      case PowerUpType.speedBoost:
+        _activateSpeedBoost();
+        break;
+      case PowerUpType.healthBoost:
+        _activateInvincibility();
+        break;
+      case PowerUpType.doubleCoins:
+        // Double score for a period
+        break;
+      case PowerUpType.damageBoost:
+        // Not applicable in infinite mode
+        break;
+    }
+  }
+
+  void _activateShield() {
+    hasShield = true;
+    shieldTimer?.cancel();
+    shieldTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) setState(() => hasShield = false);
+    });
+  }
+
+  void _activateSpeedBoost() {
+    hasSpeedBoost = true;
+    speedBoostTimer?.cancel();
+    speedBoostTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => hasSpeedBoost = false);
+    });
+  }
+
+  void _activateInvincibility() {
+    hasInvincibility = true;
+    invincibilityTimer?.cancel();
+    invincibilityTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => hasInvincibility = false);
+    });
+  }
+
+  void _removeShield() {
+    hasShield = false;
+    shieldTimer?.cancel();
+  }
+
+  void _clearPowerUps() {
+    hasShield = false;
+    hasSpeedBoost = false;
+    hasInvincibility = false;
+    shieldTimer?.cancel();
+    speedBoostTimer?.cancel();
+    invincibilityTimer?.cancel();
   }
 
   void _updateScore() {
@@ -168,12 +246,71 @@ class _InfiniteModeState extends State<InfiniteMode>
   }
 
   void _spawnObjects() {
-    if (score % obstacleInterval == 0) {
-      obstacleXs.add(1.2); // Spawn at right edge
+    // Spawn obstacles with progressive frequency
+    final obstacleChance = 0.03 + (level * 0.002);
+    if (_random.nextDouble() < obstacleChance) {
+      obstacleXs.add(1.2);
     }
-    if (score % powerUpInterval == 0) {
+
+    // Spawn power-ups more frequently (every 30 points instead of 150)
+    if (score % 30 == 0 && score > 0 && powerUpXs.length < 2) {
       powerUpXs.add(1.2);
-      powerUpTypes.add(PowerUpType.shield); // Example type
+      powerUpTypes.add(_getRandomPowerUp());
+    }
+
+    // Additional random chance to spawn power-ups (5% chance every frame)
+    if (_random.nextDouble() < 0.05 && powerUpXs.isEmpty && score > 10) {
+      powerUpXs.add(1.2);
+      powerUpTypes.add(_getRandomPowerUp());
+    }
+  }
+
+  PowerUpType _getRandomPowerUp() {
+    final powerUps = [
+      PowerUpType.shield,
+      PowerUpType.speedBoost,
+      PowerUpType.healthBoost,
+    ];
+    return powerUps[_random.nextInt(powerUps.length)];
+  }
+
+  PowerUpType? _getActivePowerUp() {
+    if (hasShield) return PowerUpType.shield;
+    if (hasSpeedBoost) return PowerUpType.speedBoost;
+    if (hasInvincibility) return PowerUpType.healthBoost;
+    return null;
+  }
+
+  void _updateDayNightCycle() {
+    dayNightCycle++;
+    if (dayNightCycle >= GameConstants.dayNightCycleDuration * 60) {
+      // 60 FPS
+      dayNightCycle = 0;
+      isNightMode = !isNightMode;
+    }
+  }
+
+  void _updateProgressiveSpeed() {
+    if (score % GameConstants.levelUpInterval == 0 && score > 0) {
+      level++;
+      currentSpeed += GameConstants.infiniteModeSpeedIncrement;
+
+      // Apply speed boost if active
+      if (hasSpeedBoost) {
+        currentSpeed *= 1.5;
+      }
+
+      // Apply night mode speed multiplier
+      if (isNightMode) {
+        currentSpeed *= GameConstants.nightModeSpeedMultiplier;
+      }
+
+      // Cap maximum speed
+      if (currentSpeed >
+          GameConstants.initialSpeed * GameConstants.maxSpeedMultiplier) {
+        currentSpeed =
+            GameConstants.initialSpeed * GameConstants.maxSpeedMultiplier;
+      }
     }
   }
 
@@ -189,7 +326,11 @@ class _InfiniteModeState extends State<InfiniteMode>
 
   void _endGame() {
     gameLoopTimer?.cancel();
-    setState(() => isGameOver = true);
+    _clearPowerUps();
+    setState(() {
+      isGameOver = true;
+      isHit = true;
+    });
     SoundManager().playGameOverSound();
     SoundManager().pauseBackgroundMusic();
     _showGameOverDialog();
@@ -199,21 +340,52 @@ class _InfiniteModeState extends State<InfiniteMode>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => GameOverDialog(
-        score: score,
-        bestScore: highScore,
-        level: 1,
-        mode: 'infinite',
-        onReplay: _startGame,
-        onMenu: () => Navigator.pop(context),
-        onSaveScore: (name) {},
-      ),
+      builder:
+          (_) => GameOverDialog(
+            score: score,
+            bestScore: highScore,
+            level: level,
+            mode: 'infinite',
+            onReplay: _restartGame,
+            onMenu: () {
+              Navigator.of(context).pop(); // Ferme le dialog
+              Navigator.of(context).pop(); // Ferme l'écran du mode de jeu
+            },
+            onSaveScore: (name) {},
+          ),
     );
+  }
+
+  void _restartGame() {
+    // Fermer le dialogue
+    Navigator.pop(context);
+
+    // Réinitialiser complètement le jeu
+    setState(() {
+      isGameStarted = false;
+      isGameOver = false;
+      isHit = false;
+      score = 0;
+      level = 1;
+      dinoY = groundLevel;
+      velocity = 0;
+      currentSpeed = GameConstants.initialSpeed;
+      isNightMode = false;
+      dayNightCycle = 0;
+      obstacleXs.clear();
+      powerUpXs.clear();
+      powerUpTypes.clear();
+      _clearPowerUps();
+    });
+
+    // Redémarrer le jeu
+    _startGame();
   }
 
   @override
   void dispose() {
     gameLoopTimer?.cancel();
+    _clearPowerUps();
     _animationController.dispose();
     SoundManager().dispose();
     super.dispose();
@@ -225,14 +397,68 @@ class _InfiniteModeState extends State<InfiniteMode>
       onTap: _jump,
       onVerticalDragStart: (_) => _jump(),
       child: Scaffold(
-        backgroundColor: Colors.blueGrey[900],
+        backgroundColor:
+            isNightMode ? Colors.indigo[900] : Colors.blueGrey[900],
         body: Stack(
           children: [
-            ScrollingBackground(scrollFactor: backgroundOffset),
-            DinoWidget(dinoY: dinoY, isJumping: isJumping),
-            ...obstacleXs.map((x) => ObstacleWidget(positionX: x * MediaQuery.of(context).size.width)),
-            ...powerUpXs.map((x) => PowerUpWidget(xPosition: x)),
+            BackgroundParallax(
+              isNightMode: isNightMode,
+              customBackground: 'assets/images/background.png',
+            ),
+
+            // Nuages défilants
+            ScrollingClouds(
+              speed: currentSpeed,
+              isPaused: false,
+              cloudCount: 6,
+            ),
+            // Dino player
+            Positioned(
+              left: GamePositions.dinoLeftPosition,
+              bottom:
+                  GamePositions.dinoGroundLevel -
+                  (dinoY * GamePositions.dinoJumpMultiplier),
+              child: DinoWidget(
+                dinoY: dinoY,
+                isJumping: isJumping,
+                isHit: isHit,
+                hasShield: hasShield,
+                hasInvincibility: hasInvincibility,
+                hasSpeedBoost: hasSpeedBoost,
+                hasDoubleCoins: false,
+                hasDamageBoost: false,
+                activePowerUp: _getActivePowerUp(),
+              ),
+            ),
+
+            // Obstacles
+            ...obstacleXs.map(
+              (x) => Positioned(
+                left:
+                    x *
+                    MediaQuery.of(context).size.width *
+                    GamePositions.obstacleWidthMultiplier,
+                bottom: GamePositions.obstacleGroundLevel,
+                child: const ObstacleWidget(positionX: 0),
+              ),
+            ),
+
+            // Power-ups
+            ...powerUpXs.asMap().entries.map(
+              (entry) => Positioned(
+                left:
+                    entry.value *
+                    MediaQuery.of(context).size.width *
+                    GamePositions.powerUpWidthMultiplier,
+                bottom: GamePositions.powerUpGroundLevel,
+                child: PowerUpWidget(
+                  xPosition: 0,
+                  powerUpType: powerUpTypes[entry.key],
+                ),
+              ),
+            ),
             _buildScoreDisplay(),
+            _buildPowerUpIndicators(),
             if (!isGameStarted && !isGameOver) _buildStartButton(),
           ],
         ),
@@ -247,10 +473,61 @@ class _InfiniteModeState extends State<InfiniteMode>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Score: $score', 
-              style: const TextStyle(fontSize: 20, color: Colors.white)),
-          Text('High: $highScore', 
-              style: const TextStyle(fontSize: 16, color: Colors.white70)),
+          Text(
+            'Score: $score',
+            style: const TextStyle(fontSize: 20, color: Colors.white),
+          ),
+          Text(
+            'High: $highScore',
+            style: const TextStyle(fontSize: 16, color: Colors.white70),
+          ),
+          Text(
+            'Level: $level',
+            style: const TextStyle(fontSize: 16, color: Colors.amber),
+          ),
+          Text(
+            isNightMode ? '🌙 Night' : '☀️ Day',
+            style: const TextStyle(fontSize: 14, color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPowerUpIndicators() {
+    return Positioned(
+      top: 40,
+      right: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (hasShield)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('🛡️', style: TextStyle(fontSize: 20)),
+            ),
+          if (hasSpeedBoost)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('⚡', style: TextStyle(fontSize: 20)),
+            ),
+          if (hasInvincibility)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('💎', style: TextStyle(fontSize: 20)),
+            ),
         ],
       ),
     );
@@ -264,8 +541,10 @@ class _InfiniteModeState extends State<InfiniteMode>
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
         ),
         onPressed: _startGame,
-        child: const Text('START GAME', 
-            style: TextStyle(fontSize: 18, color: Colors.white)),
+        child: const Text(
+          'START GAME',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
       ),
     );
   }

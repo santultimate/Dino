@@ -30,55 +30,104 @@ class SoundService with ChangeNotifier {
 
     try {
       await _audioCache.loadAll([
+        'background.mp3',
         'jump.mp3',
         'hit.mp3',
         'coin.mp3',
         'gameover.mp3',
-        // Removed 'background.mp3' as it doesn't exist
       ]);
+
+      // Configuration de la musique de fond en loop
+      await _bgPlayer.setReleaseMode(ReleaseMode.loop);
+      await _bgPlayer.setVolume(_musicVolume);
+
+      _isInitialized = true;
+      if (kDebugMode) print('🎵 SoundService initialized');
+
+      // Ne pas démarrer automatiquement la musique de fond
+      // Elle sera démarrée uniquement quand on entre en mode jeu
     } catch (e) {
-      if (kDebugMode) print('⚠️ Some sound files could not be loaded: $e');
+      if (kDebugMode) print('⚠️ Error initializing SoundService: $e');
     }
-
-    _bgPlayer.onPlayerComplete.listen((_) {
-      if (_isMusicOn) _bgPlayer.resume();
-    });
-
-    _isInitialized = true;
-    if (kDebugMode) print('🎵 SoundService initialized');
   }
 
   Future<void> playBackgroundMusic() async {
     if (!_isInitialized || !_isMusicOn) return;
-    
+
     try {
-      await _bgPlayer.setReleaseMode(ReleaseMode.loop);
-      await _bgPlayer.setVolume(_musicVolume);
-      // Temporarily disabled background music due to missing file
-      // await _bgPlayer.play(AssetSource('sounds/background.mp3'));
+      // Vérifier si la musique est déjà en cours de lecture
+      final state = _bgPlayer.state;
+      if (state == PlayerState.playing) {
+        if (kDebugMode) print('🎵 Background music already playing');
+        return; // Éviter les appels multiples
+      }
+
+      await _bgPlayer.play(AssetSource('sounds/background.mp3'));
+      if (kDebugMode) print('🎵 Background music started');
     } catch (e) {
       if (kDebugMode) print('⚠️ Could not play background music: $e');
     }
   }
 
   Future<void> stopBackgroundMusic() async {
-    await _bgPlayer.stop();
+    try {
+      final state = _bgPlayer.state;
+      if (state == PlayerState.stopped) {
+        return; // Pas de log si déjà arrêté
+      }
+
+      await _bgPlayer.stop();
+      if (kDebugMode) print('⏹️ Background music stopped');
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error stopping background music: $e');
+    }
   }
 
   Future<void> pauseBackgroundMusic() async {
-    await _bgPlayer.pause();
+    try {
+      final state = _bgPlayer.state;
+      if (state == PlayerState.paused || state == PlayerState.stopped) {
+        return; // Pas de log si déjà en pause
+      }
+
+      await _bgPlayer.pause();
+      if (kDebugMode) print('⏸️ Background music paused');
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error pausing background music: $e');
+    }
   }
 
   Future<void> resumeBackgroundMusic() async {
-    if (_isMusicOn) {
-      await _bgPlayer.resume();
+    if (!_isMusicOn) return;
+
+    try {
+      // Vérifier si la musique est déjà en cours de lecture
+      final state = _bgPlayer.state;
+      if (state == PlayerState.playing) {
+        if (kDebugMode) print('🎵 Background music already playing');
+        return; // Éviter les appels multiples
+      }
+
+      if (state == PlayerState.paused) {
+        await _bgPlayer.resume();
+        if (kDebugMode) print('▶️ Background music resumed');
+      } else {
+        // Si arrêté, redémarrer
+        await playBackgroundMusic();
+      }
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error resuming background music: $e');
     }
   }
 
   Future<void> setMusicVolume(double volume) async {
     _musicVolume = volume.clamp(0.0, 1.0);
-    await _bgPlayer.setVolume(_musicVolume);
-    notifyListeners();
+    try {
+      await _bgPlayer.setVolume(_musicVolume);
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error setting music volume: $e');
+    }
   }
 
   Future<void> setSoundEffectsVolume(double volume) async {
@@ -135,19 +184,37 @@ class SoundService with ChangeNotifier {
   }
 
   Future<void> playEffect(String fileName) async {
-    final player = AudioPlayer();
-    _effectPlayers[fileName] = player;
-    await player.setVolume(_effectsVolume);
-    final file = await _audioCache.loadAsFile(fileName);
-    await player.play(DeviceFileSource(file.path));
+    try {
+      // Arrêter l'effet précédent s'il existe
+      _effectPlayers[fileName]?.stop();
+
+      final player = AudioPlayer();
+      _effectPlayers[fileName] = player;
+
+      await player.setVolume(_effectsVolume);
+      await player.play(AssetSource('sounds/$fileName'));
+
+      player.onPlayerComplete.listen((_) {
+        player.dispose();
+        _effectPlayers.remove(fileName);
+      });
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error playing effect $fileName: $e');
+    }
   }
 
+  @override
   Future<void> dispose() async {
-    await _bgPlayer.dispose();
-    for (final player in _effectPlayers.values) {
-      await player.dispose();
+    try {
+      await _bgPlayer.dispose();
+      for (final player in _effectPlayers.values) {
+        await player.dispose();
+      }
+      _effectPlayers.clear();
+      _isInitialized = false;
+      if (kDebugMode) print('🔇 SoundService disposed');
+    } catch (e) {
+      if (kDebugMode) print('⚠️ Error disposing SoundService: $e');
     }
-    _effectPlayers.clear();
-    _isInitialized = false;
   }
 }

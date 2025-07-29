@@ -88,12 +88,12 @@ class _DifficultySelectorScreenState extends State<DifficultySelectorScreen> wit
 
   void _navigateToGameMode(GameMode mode) {
     final gameModeService = context.read<GameModeService>();
-    gameModeService.setCurrentMode(mode);
+    gameModeService.selectMode(mode);
 
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => gameModeService.getModeScreen(),
+        pageBuilder: (_, __, ___) => gameModeService.getCurrentGameScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
             opacity: animation,
