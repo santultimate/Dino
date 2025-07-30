@@ -259,8 +259,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Future<void> _launchPrivacyPolicy() async {
-    const url =
-        'https://github.com/santultimate/Dino_Game/blob/main/PRIVACY_POLICY.md';
+    const url = 'https://santultimate.github.io/Dino_Game/privacy_policy.html';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
@@ -268,7 +267,7 @@ class AboutScreen extends StatelessWidget {
 
   Future<void> _launchTermsOfService() async {
     const url =
-        'https://github.com/santultimate/Dino_Game/blob/main/TERMS_OF_SERVICE.md';
+        'https://santultimate.github.io/Dino_Game/terms_of_service.html';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
